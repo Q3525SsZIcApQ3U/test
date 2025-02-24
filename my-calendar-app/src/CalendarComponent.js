@@ -1,73 +1,103 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import ConfirmationModal from './ConfirmationModal';
+import axios from 'axios';
 
 const CalendarComponent = () => {
-  const [events, setEvents] = useState([
-    { id: 1, title: "פגישה", start: "2025-02-20T10:00:00", end: "2025-02-20T11:00:00" },
-    { id: 2, title: "כנס", start: "2025-02-25T14:00:00", end: "2025-02-25T15:30:00" },
-  ]);
-  
-const [selectedEvent, setSelectedEvent] = useState(null);
-const [isModalOpen, setIsModalOpen] = useState(false);
+  const [events, setEvents] = useState([]);
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-//checked
-const handleUpdateEvent = (updatedEvent) => {
-  setEvents((prevEvents) =>
-    prevEvents.map((event) =>
-      parseInt(event.id) === parseInt(updatedEvent.id) ? { ...event, title: updatedEvent.title } : event
-    )
-  );
-  setIsModalOpen(false); // Close the modal after updating
-};
+  // Fetch events from the backend
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const response = await axios.get('http://localhost:5000/api/events');
+        // Ensure dates are in ISO format
+        const formattedEvents = response.data.map((event) => ({
+          ...event,
+          start: new Date(event.start).toISOString(),
+          end: new Date(event.end).toISOString(),
+        }));
+        setEvents(formattedEvents);
+      } catch (error) {
+        console.error("Error fetching events", error);
+      }
+    };
+    fetchEvents();
+  }, []);
 
-  
-  // Event handler for creating new events via selecting times
+  // Handle saving new event
+  const saveEventToDB = async (newEvent) => {
+    try {
+      const response = await axios.post('http://localhost:5000/api/events', newEvent);
+      setEvents((prevEvents) => [...prevEvents, response.data]);
+    } catch (error) {
+      console.error("Error saving event", error);
+    }
+  };
+
+  // Handle updating an event
+  const handleUpdateEvent = async (updatedEvent) => {
+    try {
+      await axios.put(`http://localhost:5000/api/events/${updatedEvent.id}`, updatedEvent);
+      setEvents((prevEvents) =>
+        prevEvents.map((event) =>
+          event.id === updatedEvent.id ? updatedEvent : event
+        )
+      );
+      setIsModalOpen(false); // Close modal after updating
+    } catch (error) {
+      console.error("Error updating event", error);
+    }
+  };
+
+  // Handle event deletion
+  const handleConfirmDelete = async () => {
+    try {
+      await axios.delete(`http://localhost:5000/api/events/${selectedEvent.id}`);
+      setEvents((prevEvents) => prevEvents.filter((event) => event.id !== selectedEvent.id));
+      setIsModalOpen(false); // Close modal after deleting
+    } catch (error) {
+      console.error("Error deleting event", error);
+    }
+  };
+
+  // Handle selecting a date and creating a new event
   const handleDateSelect = (info) => {
     const title = prompt("הכנס כותרת לאירוע:");
     if (title) {
       const newEvent = {
-        id: Date.now(), // Unique ID for event
         title: title,
         start: info.startStr,
         end: info.endStr,
       };
-      setEvents((prevEvents) => [...prevEvents, newEvent]);
+      saveEventToDB(newEvent); // Save the event to the backend
     }
   };
 
-  // Event handler for dragging and moving events
+  // Handle dragging an event (move and update time)
   const handleEventDrop = (info) => {
-    setEvents((prevEvents) =>
-      prevEvents.map((event) =>
-        event.id === parseInt(info.event.id)
-          ? { ...event, start: info.event.startStr, end: info.event.endStr }
-          : event
-      )
-    );
+    const updatedEvent = {
+      id: info.event.id,
+      title: info.event.title,
+      start: info.event.startStr,
+      end: info.event.endStr,
+    };
+    handleUpdateEvent(updatedEvent); // Update event on the backend
   };
 
-  //checked
-  // Event handler for clicking on an event to show the modal
+  // Handle clicking an event to open the confirmation modal
   const handleEventClick = (info) => {
-    setSelectedEvent(info.event); // Store the selected event
-    console.log("The event has been selected.")
-    setIsModalOpen(true); // Open the modal
+    setSelectedEvent(info.event);
+    setIsModalOpen(true);
   };
 
-  //checked
-  // Handle delete confirmation
-  const handleConfirmDelete = () => {
-    setEvents((prevEvents) => prevEvents.filter((event) => event.id !== parseInt(selectedEvent.id)));
-    setIsModalOpen(false); // Close the modal after deleting
-  };
-
-  // Handle closing the modal without any action
   const handleCloseModal = () => {
-    setIsModalOpen(false); // Close the modal
+    setIsModalOpen(false);
   };
 
   return (
