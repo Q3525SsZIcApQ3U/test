@@ -1,70 +1,69 @@
-# Getting Started with Create React App
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
-## Available Scripts
+## Add Course Functionality
 
-In the project directory, you can run:
+### Required Fields
 
-### `npm start`
+- Course Name
+- Commanders (Name and ID)
+- Two Hourly Meetings
+- Start and Finish Dates
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+# change hourly meeting
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+drag and drop. 
 
-### `npm test`
+# Add Event Types
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+Drag and drop to create:
 
-### `npm run build`
+- Team Sessions
+    - Group training activities
+    - Team building exercises
+- Fitness Tests
+    - Physical assessments
+    - Performance evaluations
+- Regular Sessions
+    - Individual training
+    - Routine meetings
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### **Validation Rules & Warnings**
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### 1. Schedule Availability Check
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+- Warning: Selected time slot is not available in schedule
+    - A. Add course with notification of unavailable time slot
+    - B. Cancel course creation
+    - C. Add course without unavailable time slot, with weekly reminder notifications
 
-### `npm run eject`
+### 2. Single Meeting Time Check
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+- Warning: Course requires exactly one hourly meeting
+    - A. Proceed with single meeting
+    - B. Cancel course creation
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+### 3. 48-Hour Rule Check
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+- Warning: Meeting scheduled within first 48 hours
+    - A. Proceed with notifications
+    - B. Cancel course creation
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+### 4. Meeting Interval Check
 
-## Learn More
+- Warning: Less than 12 hours between sessions
+    - A. Proceed with notifications
+    - B. Cancel course creation
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+### Notification Triggers Summary
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+- Schedule conflicts
+- Meeting time violations
+- 48-hour notice requirement
+- Insufficient interval between sessions
+- Missing commander sessions this week
+- Fitness test within one month
 
-### Code Splitting
+## Technologies
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- React
+- nodejs
