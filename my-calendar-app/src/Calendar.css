@@ -1,0 +1,846 @@
+/* Calendar.css */
+.calendar-container.modern {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+}
+
+.calendar-container.modern.dark {
+  background: #1a1a1a;
+  color: #ffffff;
+}
+
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding: 0 12px;
+}
+
+.header-actions {
+  display: flex;
+  gap: 12px;
+}
+
+/* Modern buttons */
+.btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+.btn-secondary {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.btn-secondary:hover {
+  background: #e5e7eb;
+}
+
+.btn-danger {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+}
+
+.btn-danger:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+}
+
+/* Icon button */
+.icon-button {
+  padding: 8px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  font-size: 20px;
+}
+
+/* Modal styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content.modern {
+  background: white;
+  padding: 32px;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  direction: rtl;
+  box-shadow: 0 4px 32px rgba(0, 0, 0, 0.1);
+}
+
+.dark .modal-content.modern {
+  background: #1a1a1a;
+  color: #ffffff;
+}
+
+.modal-title {
+  font-size: 1.75rem;
+  font-weight: 600;
+  margin-bottom: 24px;
+  text-align: right;
+  color: #111827;
+}
+
+.dark .modal-title {
+  color: #ffffff;
+}
+
+.event-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label {
+  font-weight: 500;
+  font-size: 0.9rem;
+  color: #4b5563;
+}
+
+.dark .form-group label {
+  color: #e5e7eb;
+}
+
+.form-input {
+  padding: 12px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+}
+
+.dark .form-input {
+  background: #374151;
+  border-color: #4b5563;
+  color: #ffffff;
+}
+
+.course-selection {
+  display: flex;
+  gap: 8px;
+}
+
+.course-selection select {
+  flex: 1;
+}
+
+.new-course-form {
+  background: #f9fafb;
+  padding: 16px;
+  border-radius: 8px;
+  margin-top: 8px;
+}
+
+.dark .new-course-form {
+  background: #374151;
+}
+
+.course-input-group {
+  display: flex;
+  gap: 8px;
+}
+
+.course-input-group input {
+  flex: 1;
+}
+
+/* Checkbox styling */
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.checkbox-input {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  accent-color: #3b82f6;
+}
+
+/* Calendar event styling */
+.fc-event {
+  border: none !important;
+  border-radius: 6px !important;
+  padding: 4px !important;
+  transition: transform 0.2s ease;
+}
+
+.fc-event:hover {
+  transform: scale(1.02);
+}
+
+.fc-event-title {
+  font-weight: 500 !important;
+  font-size: 0.9em !important;
+}
+
+.fc-event-time {
+  font-size: 0.8em !important;
+  opacity: 0.9;
+}
+
+/* FullCalendar modern overrides */
+.fc {
+  max-width: 100%;
+  direction: rtl;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.fc .fc-toolbar.fc-header-toolbar {
+  margin-bottom: 1.5em;
+  padding: 0 12px;
+}
+
+.fc .fc-button {
+  border-radius: 8px !important;
+  padding: 8px 16px !important;
+  font-weight: 500 !important;
+  transition: all 0.2s ease !important;
+}
+
+.fc .fc-button-primary {
+  background: #3b82f6 !important;
+  border: none !important;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3) !important;
+}
+
+.fc .fc-button-primary:hover {
+  background: #2563eb !important;
+  transform: translateY(-1px);
+}
+
+.fc .fc-toolbar-title {
+  font-size: 1.5rem !important;
+  font-weight: 600 !important;
+}
+
+.dark .fc-theme-standard td,
+.dark .fc-theme-standard th {
+  border-color: #374151 !important;
+}
+
+.dark .fc-theme-standard .fc-scrollgrid {
+  border-color: #374151 !important;
+}
+
+/* Today cell highlight */
+.fc .fc-day-today {
+  background: rgba(59, 130, 246, 0.05) !important;
+}
+
+.dark .fc .fc-day-today {
+  background: rgba(59, 130, 246, 0.1) !important;
+}
+
+/* Time slot hover effect */
+.fc .fc-timegrid-slot:hover {
+  background: rgba(59, 130, 246, 0.05);
+}
+
+.dark .fc .fc-timegrid-slot:hover {
+  background: rgba(59, 130, 246, 0.1);
+}
+
+/* Exception event styling */
+.fc-event.exception {
+  border-left: 4px solid #f59e0b !important;
+}
+
+/* Course color indicators */
+.course-color-indicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 8px;
+}
+
+/* Trainer indicator styling */
+.event-trainer {
+  font-size: 0.8em;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+/* Animation for modal */
+@keyframes modalFade {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.modal-content {
+  animation: modalFade 0.2s ease-out;
+}
+
+/* Trainer filter dropdown styling */
+.trainer-filter {
+  margin-left: 12px;
+  padding: 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+/* Add these styles to your existing Calendar.css file */
+
+/* Event date/time info in modal */
+.event-datetime-info {
+  background-color: #f8fafc;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  text-align: center;
+  direction: rtl;
+}
+
+.dark .event-datetime-info {
+  background-color: #334155;
+}
+
+.event-date {
+  font-weight: 500;
+  font-size: 1rem;
+  color: #334155;
+  margin-bottom: 4px;
+}
+
+.dark .event-date {
+  color: #e2e8f0;
+}
+
+.event-time {
+  font-weight: 600;
+  font-size: 1.25rem;
+  color: #0f172a;
+}
+
+.dark .event-time {
+  color: #f8fafc;
+}
+
+/* Settings button */
+.settings-button {
+  padding: 8px 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.settings-button:hover {
+  background: #f1f5f9;
+  transform: translateY(-1px);
+}
+
+.dark .settings-button {
+  background: #334155;
+  border-color: #475569;
+  color: #f8fafc;
+}
+
+.dark .settings-button:hover {
+  background: #475569;
+}
+
+/* Improved header buttons layout */
+.header-buttons {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Add this to your existing Calendar.css file */
+
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 20px;
+  background-color: #f5f5f5;
+  border-bottom: 1px solid #ddd;
+}
+
+.header-buttons {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.theme-toggle,
+.settings-button,
+.export-button {
+  padding: 8px 12px;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.theme-toggle:hover,
+.settings-button:hover,
+.export-button:hover {
+  background-color: #f0f0f0;
+  border-color: #aaa;
+}
+
+.settings-button {
+  font-weight: 500;
+  color: #333;
+  background-color: #e6f7ff;
+  border-color: #91d5ff;
+}
+
+.settings-button:hover {
+  background-color: #bae7ff;
+  border-color: #69c0ff;
+}
+
+.trainer-filter {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background-color: #fff;
+  min-width: 150px;
+  direction: rtl;
+}
+
+/* Dark mode styles */
+.dark .calendar-header {
+  background-color: #333;
+  border-color: #444;
+}
+
+.dark .theme-toggle,
+.dark .export-button,
+.dark .trainer-filter {
+  background-color: #444;
+  border-color: #555;
+  color: #fff;
+}
+
+.dark .settings-button {
+  background-color: #177ddc;
+  border-color: #1890ff;
+  color: #fff;
+}
+
+.dark .theme-toggle:hover,
+.dark .export-button:hover {
+  background-color: #555;
+  border-color: #666;
+}
+
+.dark .settings-button:hover {
+  background-color: #1890ff;
+  border-color: #40a9ff;
+}
+/* Tag styling */
+.course-tags,
+.event-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.course-tag,
+.event-tag {
+  background: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+}
+
+.dark .course-tag,
+.dark .event-tag {
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+}
+
+.tag-remove-btn {
+  background: none;
+  border: none;
+  color: inherit;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 0 0 3px;
+  opacity: 0.7;
+}
+
+.tag-remove-btn:hover {
+  opacity: 1;
+}
+
+.tag-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.tag-display {
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.tag-count {
+  font-size: 0.8rem;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+.dark .tag-count {
+  color: #9ca3af;
+}
+
+.add-tag-dropdown {
+  margin-top: 6px;
+}
+
+.tag-select {
+  font-size: 0.8rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid #d1d5db;
+}
+
+.dark .tag-select {
+  background: #1e293b;
+  border-color: #475569;
+  color: #f3f4f6;
+}
+
+/* Course form styling improvements */
+.course-button-group {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.new-course-form {
+  background: #f9fafb;
+  padding: 16px;
+  border-radius: 8px;
+  margin: 8px 0 16px;
+}
+
+.dark .new-course-form {
+  background: #1e293b;
+}
+
+/* Event displaying tag improvements */
+.event-tag {
+  font-size: 0.7rem;
+  padding: 1px 4px;
+}
+
+/* Ensure input and selects use correct text direction */
+.form-input, 
+.tag-select,
+textarea.form-input {
+  direction: rtl;
+  text-align: right;
+}
+
+/* Improve buttons in settings modal */
+.button-group-inline {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+  justify-content: flex-end;
+}
+
+/* Fix settings modal visibility */
+.settings-overlay {
+  display: flex !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+.settings-modal {
+  visibility: visible !important;
+  opacity: 1 !important;
+  display: flex !important;
+  flex-direction: column;
+}
+
+/* Fix color swatches */
+.color-swatch {
+  min-width: 24px;
+  min-height: 24px;
+}
+
+.color-swatch-large {
+  min-width: 40px;
+  min-height: 40px;
+}
+
+/* Improve modal animation */
+.modal-overlay {
+  animation: fadeIn 0.2s ease-out;
+}
+
+.modal-content {
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from { 
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Additional styles for event types and background customization */
+
+/* Calendar Background Customization */
+:root {
+  --calendar-bg-color: #ffffff;
+}
+
+.calendar-container.modern {
+  background-color: var(--calendar-bg-color);
+}
+
+/* Event Type Selection */
+.event-type-selection {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.event-type-indicator {
+  flex-shrink: 0;
+  border-radius: 4px;
+  width: 18px;
+  height: 18px;
+  margin-right: 8px;
+  box-shadow: 0 0 3px rgba(0, 0, 0, 0.2);
+}
+
+/* Background Options in Settings */
+.background-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 15px;
+  margin: 15px 0;
+}
+
+.background-option {
+  position: relative;
+  height: 80px;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  border: 2px solid transparent;
+}
+
+.background-option:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.background-option.selected {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+}
+
+.bg-name {
+  padding: 4px 8px;
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.bg-delete-btn {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.9);
+  color: #dc2626;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 14px;
+  opacity: 0.8;
+  transition: all 0.2s;
+}
+
+.bg-delete-btn:hover {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+/* Preview Background */
+.preview-background {
+  background-color: var(--preview-bg-color);
+  padding: 15px;
+  border-radius: 8px;
+  margin-top: 15px;
+}
+
+/* Event Type Info */
+.event-type-info {
+  display: flex;
+  align-items: center;
+}
+
+.event-type-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  display: inline-block;
+  margin-left: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* Preview Chip */
+.preview-chip {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 4px;
+  margin-top: 10px;
+  font-weight: 500;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Event badges in calendar */
+.event-badge {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 4px;
+}
+
+.event-type-name {
+  font-size: 0.7em;
+  opacity: 0.9;
+  margin-top: 2px;
+}
+
+/* Light/Dark mode specific fixes */
+.dark .preview-background .preview-content {
+  background-color: #2a2a2a;
+  color: #f5f5f5;
+}
+
+.dark .bg-name {
+  background-color: rgba(30, 41, 59, 0.9);
+  color: #f1f5f9;
+}
+
+.dark .bg-delete-btn {
+  background-color: rgba(30, 41, 59, 0.9);
+}
+
+/* Course selection enhanced */
+.course-selection {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.course-selection select {
+  flex-grow: 1;
+}
+
+/* Prevent empty placeholder option in course selector */
+select.form-input option[value=""] {
+  color: #6c757d;
+}
