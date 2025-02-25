@@ -1,0 +1,17 @@
+TO DO:
+1. decorate the settings.
+2. make the settings presarvable 
+3. add the first instance of collition of meetings
+4. import the hebrew calendar into our own calendar
+5. (add the option to erase one instance of repatative meeting) => sit on it together.
+6. add type to each meeting (for example, tests, workouts, commanders's workout etc)
+notofication system: 
+4. add warnings for course with less than two weekly meetings. 
+5. add warnings for collitions of meetings
+6. add warnings for two meetings with less than 12 hours between them
+7. add warnings for two meetings with less than 24 hours between them
+8. add warnings for tests with less than 30 days before.
+9. create diffrent type of warnings.
+10. make the warnings presarvable (can be igonred for good, will come up daily and not each time the program start)
+11. make the notifications timed based (for specific week of mounth)
+
