@@ -211,7 +211,7 @@ const EventModal = ({
       updatedEvent.rrule = {
         freq: 'weekly',
         dtstart: event.start,
-        until: recurrenceEndDate + 'T23:59:59',
+        until: recurrenceEndDate + 'T23:59:59Z',
         interval: 1
       };
       
@@ -302,16 +302,19 @@ const EventModal = ({
               weekday: 'long', 
               year: 'numeric', 
               month: 'long', 
-              day: 'numeric' 
+              day: 'numeric' ,
+              timeZone: 'UTC'
             })}
           </div>
           <div className="event-time">
             {new Date(event.start).toLocaleTimeString('he-IL', { 
               hour: '2-digit', 
-              minute: '2-digit' 
+              minute: '2-digit' ,
+              timeZone: 'UTC'
             })} - {new Date(event.end).toLocaleTimeString('he-IL', { 
               hour: '2-digit', 
-              minute: '2-digit' 
+              minute: '2-digit',
+              timeZone: 'UTC'
             })}
           </div>
         </div>

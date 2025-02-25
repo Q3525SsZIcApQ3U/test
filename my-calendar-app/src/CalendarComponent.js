@@ -277,9 +277,12 @@ const CalendarComponent = () => {
       }
     };
     
-    if (courses.length > 0) {
-      fetchEvents();
-    }
+    // if (courses.length > 0) {
+    //   fetchEvents();
+    // }
+
+    fetchEvents();
+
   }, [courses]);
 
   // Update events when courses change to reflect any new course settings (such as colors)
@@ -298,6 +301,8 @@ const CalendarComponent = () => {
 
   // Filter events by trainer if filter is active
   const filteredEvents = useMemo(() => {
+    console.log("print events before filter:")
+    console.log(events)
     if (!selectedTrainerFilter) return events;
     return events.filter(event => event.extendedProps?.trainerId === selectedTrainerFilter);
   }, [events, selectedTrainerFilter]);
@@ -312,7 +317,9 @@ const CalendarComponent = () => {
     // Find conflicting events
     const start = new Date(newEvent.start);
     const end = new Date(newEvent.end);
-    
+    console.log("highlightConflictingEvents:");
+    console.log(events);
+
     events.forEach(event => {
       if (event.id === newEvent.id) return; // Skip the current event
       
@@ -358,6 +365,8 @@ const CalendarComponent = () => {
 
   // Handle date selection (creating a new event)
   const handleDateSelect = useCallback((selectInfo) => {
+    console.log("selectedInfo:")
+    console.log(selectInfo)
     // Clear any previously highlighted events
     clearHighlightedEvents();
     
@@ -390,7 +399,7 @@ const CalendarComponent = () => {
     clearHighlightedEvents();
     
     const event = clickInfo.event;
-    
+
     // Handle recurring events differently
     if (event.rrule) {
       const choice = window.prompt(
@@ -411,6 +420,7 @@ const CalendarComponent = () => {
             title: event.title,
             start: event.start,
             end: event.end,
+            // rrule: event.rrule, //TODO
             extendedProps: { 
               ...event.extendedProps, 
               originalEventId: event.id, 
@@ -517,6 +527,7 @@ const CalendarComponent = () => {
 
   // Handle dragging (eventDrop) with validations and highlighting
   const handleEventDrop = useCallback((dropInfo) => {
+    console.log("in handleEventDrop")
     // Clear any previously highlighted events
     clearHighlightedEvents();
     
@@ -563,6 +574,13 @@ const CalendarComponent = () => {
     
     // If no warnings, update event normally
     clearHighlightedEvents();
+    //event
+    console.log("drag and drop 1:")
+    console.log(event)
+    //updatedEvent
+    console.log("drag and drop 2:")
+
+    console.log(updatedEvent)
     saveEventToDB(updatedEvent);
     setEvents(prevEvents => {
       const updatedEvents = prevEvents.map(ev => ev.id === updatedEvent.id ? updatedEvent : ev);
@@ -969,6 +987,7 @@ const CalendarComponent = () => {
       {/* Calendar View */}
       <div className="calendar-wrapper">
         <FullCalendar
+          timeZone="UTC"
           ref={calendarRef}
           plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, rrulePlugin]}
           initialView="timeGridWeek"

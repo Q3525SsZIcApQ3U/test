@@ -5,155 +5,75 @@ const cors = require('cors');
 const path = require('path');
 const app = express();
 
-// Configuration - set to 'sqlite' or 'mysql'
-const DB_TYPE = process.env.DB_TYPE || 'sqlite';
-
-// Database connection setup
-let db;
-if (DB_TYPE === 'sqlite') {
-  const sqlite3 = require('sqlite3').verbose();
-  db = new sqlite3.Database(path.join(__dirname, 'calendar_database.db'));
-  console.log('Using SQLite database');
-} else if (DB_TYPE === 'mysql') {
-  const mysql = require('mysql2');
-  db = mysql.createConnection({
-    host: process.env.DB_HOST || 'localhost',
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || '',
-    database: process.env.DB_NAME || 'calendar_db'
-  });
-  db.connect(err => {
-    if (err) {
-      console.error('Error connecting to MySQL:', err);
-      process.exit(1);
-    }
-    console.log('Connected to MySQL database');
-  });
-}
+// Database connection setup for SQLite
+const sqlite3 = require('sqlite3').verbose();
+const db = new sqlite3.Database(path.join(__dirname, 'calendar_database.db'));
+console.log('Using SQLite database');
 
 // Middleware
 app.use(cors());
 app.use(bodyParser.json());
 
-// Database operations helper (abstracts SQLite/MySQL differences)
+// Database operations helper (function that runs the query).
 const dbOps = {
   run: (query, params = []) => {
     return new Promise((resolve, reject) => {
-      if (DB_TYPE === 'sqlite') {
-        db.run(query, params, function(err) {
-          if (err) return reject(err);
-          resolve({ lastID: this.lastID, changes: this.changes });
-        });
-      } else {
-        db.query(query, params, (err, results) => {
-          if (err) return reject(err);
-          resolve({ 
-            lastID: results.insertId, 
-            changes: results.affectedRows 
-          });
-        });
-      }
+      db.run(query, params, function(err) {
+        if (err) return reject(err);
+        resolve({ lastID: this.lastID, changes: this.changes });
+      });
     });
   },
   get: (query, params = []) => {
     return new Promise((resolve, reject) => {
-      if (DB_TYPE === 'sqlite') {
-        db.get(query, params, (err, row) => {
-          if (err) return reject(err);
-          resolve(row);
-        });
-      } else {
-        db.query(query, params, (err, results) => {
-          if (err) return reject(err);
-          resolve(results[0] || null);
-        });
-      }
+      db.get(query, params, (err, row) => {
+        if (err) return reject(err);
+        resolve(row);
+      });
     });
   },
   all: (query, params = []) => {
     return new Promise((resolve, reject) => {
-      if (DB_TYPE === 'sqlite') {
-        db.all(query, params, (err, rows) => {
-          if (err) return reject(err);
-          resolve(rows);
-        });
-      } else {
-        db.query(query, params, (err, results) => {
-          if (err) return reject(err);
-          resolve(results);
-        });
-      }
+      db.all(query, params, (err, rows) => {
+        if (err) return reject(err);
+        resolve(rows);
+      });
     });
   }
 };
 
-// Create tables based on database type
 const createTables = async () => {
   try {
     // Events table
-    if (DB_TYPE === 'sqlite') {
-      await dbOps.run(`
-        CREATE TABLE IF NOT EXISTS events (
-          id TEXT PRIMARY KEY,
-          title TEXT NOT NULL,
-          start TEXT NOT NULL,
-          end TEXT NOT NULL,
-          extendedProps TEXT,
-          rrule TEXT,
-          duration TEXT,
-          backgroundColor TEXT
-        )
-      `);
-    } else {
-      await dbOps.run(`
-        CREATE TABLE IF NOT EXISTS events (
-          id VARCHAR(255) PRIMARY KEY,
-          title VARCHAR(255) NOT NULL,
-          start VARCHAR(255) NOT NULL,
-          end VARCHAR(255) NOT NULL,
-          extendedProps TEXT,
-          rrule TEXT,
-          duration TEXT,
-          backgroundColor VARCHAR(50)
-        )
-      `);
-    }
+    await dbOps.run(`
+      CREATE TABLE IF NOT EXISTS events (
+        id TEXT PRIMARY KEY,
+        title TEXT NOT NULL,
+        start TEXT NOT NULL,
+        end TEXT NOT NULL,
+        extendedProps TEXT,
+        rrule TEXT,
+        duration TEXT,
+        backgroundColor TEXT
+      )
+    `);
 
     // Courses table
-    if (DB_TYPE === 'sqlite') {
-      await dbOps.run(`
-        CREATE TABLE IF NOT EXISTS courses (
-          id TEXT PRIMARY KEY,
-          name TEXT NOT NULL,
-          color TEXT
-        )
-      `);
-    } else {
-      await dbOps.run(`
-        CREATE TABLE IF NOT EXISTS courses (
-          id VARCHAR(255) PRIMARY KEY,
-          name VARCHAR(255) NOT NULL,
-          color TEXT
-        )
-      `);
-    }
+    await dbOps.run(`
+      CREATE TABLE IF NOT EXISTS courses (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        color TEXT
+      )
+    `);
 
     // Trainers table
-    if (DB_TYPE === 'sqlite') {
-      await dbOps.run(`
-        CREATE TABLE IF NOT EXISTS trainers (
-          id TEXT PRIMARY KEY,
-          name TEXT NOT NULL
-        )
-      `);
-    } else {
-      await dbOps.run(`
-        CREATE TABLE IF NOT EXISTS trainers (
-          id VARCHAR(255) PRIMARY KEY,
-          name VARCHAR(255) NOT NULL
-        )
-      `);
-    }
+    await dbOps.run(`
+      CREATE TABLE IF NOT EXISTS trainers (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL
+      )
+    `);
     
     console.log('Database tables created or verified');
     return true;
@@ -513,7 +433,7 @@ const initializeDefaultData = async () => {
       // Insert default trainers
       const defaultTrainers = [
         { id: 't1', name: 'אדם' },
-        { id: 't2', name: 'שרה' }
+        { id: 't2', name: 'הודיה' }
       ];
       
       const trainerInsertQuery = 'INSERT INTO trainers (id, name) VALUES (?, ?)';
@@ -524,78 +444,18 @@ const initializeDefaultData = async () => {
       console.log('Default trainers initialized');
     }
     
-    // Check if events table is empty
-    const eventCountResult = await dbOps.get('SELECT COUNT(*) as count FROM events');
-    const eventCount = eventCountResult?.count || 0;
-    
-    if (eventCount === 0) {
-      // Insert a default event
-      const defaultEvent = {
-        id: '1',
-        title: 'מתמטיקה',
-        start: '2025-02-24T10:00:00',
-        end: '2025-02-24T11:30:00',
-        extendedProps: JSON.stringify({
-          description: 'שיעור מתמטיקה שבועי',
-          location: 'כיתה 101',
-          courseId: '1',
-          trainerId: 't1'
-        }),
-        rrule: JSON.stringify({
-          freq: 'weekly',
-          dtstart: '2025-02-24T10:00:00',
-          until: '2025-06-24T23:59:59',
-          interval: 1
-        }),
-        duration: JSON.stringify({
-          hours: 1,
-          minutes: 30
-        }),
-        backgroundColor: '#FF6B6B'
-      };
-      
-      const eventInsertQuery = `
-        INSERT INTO events (id, title, start, end, extendedProps, rrule, duration, backgroundColor) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      `;
-      
-      await dbOps.run(eventInsertQuery, [
-        defaultEvent.id,
-        defaultEvent.title,
-        defaultEvent.start,
-        defaultEvent.end,
-        defaultEvent.extendedProps,
-        defaultEvent.rrule,
-        defaultEvent.duration,
-        defaultEvent.backgroundColor
-      ]);
-      
-      console.log('Default event initialized');
-    }
   } catch (err) {
     console.error('Error initializing default data:', err);
   }
 };
 
-// Start server and initialize database
-const startServer = async () => {
-  try {
-    const tablesCreated = await createTables();
-    
-    if (tablesCreated) {
-      await initializeDefaultData();
-      
-      const PORT = process.env.PORT || 5001;
-      app.listen(PORT, () => {
-        console.log(`Server running on port ${PORT}`);
-      });
-    } else {
-      console.error('Failed to create database tables. Server not started.');
-    }
-  } catch (err) {
-    console.error('Error starting server:', err);
-    process.exit(1);
-  }
-};
-
-startServer();
+// Initialize everything
+createTables().then(() => {
+  initializeDefaultData().then(() => {
+    // Start the server
+    const port = process.env.PORT || 5001;
+    app.listen(port, () => {
+      console.log(`Server running on port ${port}`);
+    });
+  });
+});
