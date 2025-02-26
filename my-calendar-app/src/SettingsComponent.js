@@ -141,16 +141,38 @@ const SettingsComponent = ({ isOpen, onClose, trainers, courses, onSettingsChang
   }, [trainers, courses]);
 
   if (!isOpen) return null;
-
-  const handleAddTrainer = () => {
+  
+  const handleAddTrainer = async () => {
     if (newTrainerName.trim()) {
       const newTrainer = { id: `t${Date.now()}`, name: newTrainerName };
-      const updatedTrainers = [...localTrainers, newTrainer];
-      setLocalTrainers(updatedTrainers);
-      setNewTrainerName('');
       
-      // Store in localStorage for persistence
-      localStorage.setItem('trainers', JSON.stringify(updatedTrainers));
+      try {
+        // Save to API
+        const response = await axios.post(`${API_BASE_URL}/trainers`, {
+          name: newTrainer.name
+        });
+        
+        // Use the trainer returned by the API (which should have a DB-generated ID)
+        const savedTrainer = response.data;
+        const updatedTrainers = [...localTrainers, savedTrainer];
+        
+        setLocalTrainers(updatedTrainers);
+        setNewTrainerName('');
+        console.log(updatedTrainers);
+        
+        // Store in localStorage for persistence
+        localStorage.setItem('trainers', JSON.stringify(updatedTrainers));
+      } catch (error) {
+        console.error("Error adding trainer:", error);
+        
+        // Still update local state even if API fails
+        const updatedTrainers = [...localTrainers, newTrainer];
+        setLocalTrainers(updatedTrainers);
+        setNewTrainerName('');
+        
+        // Store in localStorage for persistence
+        localStorage.setItem('trainers', JSON.stringify(updatedTrainers));
+      }
     }
   };
 

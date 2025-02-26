@@ -642,7 +642,6 @@ const handleEventResize = useCallback((resizeInfo) => {
     start: originalEvent.start, // Keep original start time
     end: new Date(originalEnd.getTime() + timeShift).toISOString(), // Shifted end time
     extendedProps: originalEvent.extendedProps,
-    backgroundColor: originalEvent.backgroundColor,
     rrule: originalEvent.rrule
       ? {
           ...originalEvent.rrule,
