@@ -175,13 +175,27 @@ const SettingsComponent = ({ isOpen, onClose, trainers, courses, onSettingsChang
       }
     }
   };
-
-  const handleDeleteTrainer = (id) => {
-    const updatedTrainers = localTrainers.filter(trainer => trainer.id !== id);
-    setLocalTrainers(updatedTrainers);
-    
-    // Update localStorage
-    localStorage.setItem('trainers', JSON.stringify(updatedTrainers));
+  const handleDeleteTrainer = async (id) => {
+    try {
+      // Delete from database
+      await axios.delete(`${API_BASE_URL}/trainers/${id}`);
+      
+      // Update local state
+      const updatedTrainers = localTrainers.filter(trainer => trainer.id !== id);
+      setLocalTrainers(updatedTrainers);
+      
+      // Update localStorage
+      localStorage.setItem('trainers', JSON.stringify(updatedTrainers));
+    } catch (error) {
+      console.error("Error deleting trainer:", error);
+      
+      // Still update local state even if API call fails
+      const updatedTrainers = localTrainers.filter(trainer => trainer.id !== id);
+      setLocalTrainers(updatedTrainers);
+      
+      // Update localStorage
+      localStorage.setItem('trainers', JSON.stringify(updatedTrainers));
+    }
   };
 
   const handleAddCourse = async () => {
@@ -243,12 +257,27 @@ const SettingsComponent = ({ isOpen, onClose, trainers, courses, onSettingsChang
   };
   
 
-  const handleDeleteCourse = (id) => {
-    const updatedCourses = localCourses.filter(course => course.id !== id);
-    setLocalCourses(updatedCourses);
-    
-    // Update localStorage
-    localStorage.setItem('courses', JSON.stringify(updatedCourses));
+  const handleDeleteCourse = async (id) => {
+    try {
+      // Delete from database
+      await axios.delete(`${API_BASE_URL}/courses/${id}`);
+      
+      // Update local state
+      const updatedCourses = localCourses.filter(course => course.id !== id);
+      setLocalCourses(updatedCourses);
+      
+      // Update localStorage
+      localStorage.setItem('courses', JSON.stringify(updatedCourses));
+    } catch (error) {
+      console.error("Error deleting course:", error);
+      
+      // Still update local state even if API call fails
+      const updatedCourses = localCourses.filter(course => course.id !== id);
+      setLocalCourses(updatedCourses);
+      
+      // Update localStorage
+      localStorage.setItem('courses', JSON.stringify(updatedCourses));
+    }
   };
 
   const handleAddTag = () => {
