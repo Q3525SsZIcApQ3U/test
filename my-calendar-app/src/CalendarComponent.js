@@ -531,14 +531,37 @@ const CalendarComponent = () => {
     // Clear any previously highlighted events
     clearHighlightedEvents();
     
-    const event = dropInfo.event;
-    const updatedEvent = {
-      id: event.id,
-      title: event.title,
-      start: event.startStr,
-      end: event.endStr,
-      extendedProps: event.extendedProps
-    };
+    const event = dropInfo.event; //drop position
+    const oldEvent = dropInfo.oldEvent; //first event
+    const originalEvent = events.find(ev=>ev.id===event.id) //drag position.
+
+  // Calculate the time shift (difference between the modified event and the original recurrence start)
+  const originalStart = new Date(originalEvent.start);
+  const modifiedStart = new Date(event.startStr);
+  const oldStart = new Date(oldEvent.startStr)
+  const timeShift =(modifiedStart.getTime() - oldStart.getTime());
+
+  console.log("timeShift")
+  console.log(timeShift)
+
+  // Create the updated event with a shifted start time
+  const updatedEvent = {
+    id: event.id,
+    title: event.title,
+    start: new Date((new Date(originalEvent.start)).getTime() + timeShift).toISOString(), // Shifted start time
+    end: new Date((new Date(originalEvent.end)).getTime() + timeShift).toISOString(), // Keep the modified end time
+    extendedProps: event.extendedProps,
+    rrule: originalEvent.rrule
+      ? {
+          ...originalEvent.rrule,
+          dtstart: new Date(originalStart.getTime() + timeShift).toISOString(), // Shifted recurrence start
+          until: new Date(new Date(originalEvent.rrule.until).getTime() + timeShift).toISOString()
+        }
+      : null
+  };
+  console.log("rrule::")
+  console.log(updatedEvent)
+
     
     // Highlight conflicting events
     const conflictingEvents = highlightConflictingEvents(updatedEvent);
@@ -600,7 +623,11 @@ const CalendarComponent = () => {
       title: event.title,
       start: event.startStr,
       end: event.endStr,
-      extendedProps: event.extendedProps
+      extendedProps: 
+      {
+      ...event.extendedProps, 
+      rrule: event.extendedProps.rrule || null
+      }
     };
     
     // Highlight conflicting events
