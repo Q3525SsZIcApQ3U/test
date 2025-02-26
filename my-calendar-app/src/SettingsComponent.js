@@ -184,32 +184,64 @@ const SettingsComponent = ({ isOpen, onClose, trainers, courses, onSettingsChang
     localStorage.setItem('trainers', JSON.stringify(updatedTrainers));
   };
 
-  const handleAddCourse = () => {
+  const handleAddCourse = async () => {
     if (newCourseName.trim()) {
-      const newCourse = { 
-        id: `c${Date.now()}`, 
-        name: newCourseName, 
+      const newCourse = {
+        id: `c${Date.now()}`,
+        name: newCourseName,
         color: selectedColor,
         tags: newCourseTag.trim() ? [newCourseTag.trim()] : []
       };
-      
-      const updatedCourses = [...localCourses, newCourse];
-      setLocalCourses(updatedCourses);
-      setNewCourseName('');
-      setNewCourseTag('');
-      setSelectedColor(colorPalette[updatedCourses.length % colorPalette.length]);
-      
-      // Store in localStorage for persistence
-      localStorage.setItem('courses', JSON.stringify(updatedCourses));
-      
-      // Add tag to tags list if it's new
-      if (newCourseTag.trim() && !tags.includes(newCourseTag.trim())) {
-        const updatedTags = [...tags, newCourseTag.trim()];
-        setTags(updatedTags);
-        localStorage.setItem('courseTags', JSON.stringify(updatedTags));
+  
+      try {
+        // Save to API
+        const response = await axios.post(`${API_BASE_URL}/courses`, {
+          name: newCourse.name,
+          color: JSON.stringify(newCourse.color),
+          tags: JSON.stringify(newCourse.tags)
+        });
+  
+        // Use the course returned by the API (which should have a DB-generated ID)
+        const savedCourse = response.data;
+  
+        const updatedCourses = [...localCourses, savedCourse];
+        setLocalCourses(updatedCourses);
+        setNewCourseName('');
+        setNewCourseTag('');
+        setSelectedColor(colorPalette[updatedCourses.length % colorPalette.length]);
+  
+        // Store in localStorage for persistence
+        localStorage.setItem('courses', JSON.stringify(updatedCourses));
+  
+        // Add tag to tags list if it's new
+        if (newCourseTag.trim() && !tags.includes(newCourseTag.trim())) {
+          const updatedTags = [...tags, newCourseTag.trim()];
+          setTags(updatedTags);
+          localStorage.setItem('courseTags', JSON.stringify(updatedTags));
+        }
+      } catch (error) {
+        console.error("Error adding course:", error);
+  
+        // Still update local state even if API fails
+        const updatedCourses = [...localCourses, newCourse];
+        setLocalCourses(updatedCourses);
+        setNewCourseName('');
+        setNewCourseTag('');
+        setSelectedColor(colorPalette[updatedCourses.length % colorPalette.length]);
+  
+        // Store in localStorage for persistence
+        localStorage.setItem('courses', JSON.stringify(updatedCourses));
+  
+        // Add tag to tags list if it's new
+        if (newCourseTag.trim() && !tags.includes(newCourseTag.trim())) {
+          const updatedTags = [...tags, newCourseTag.trim()];
+          setTags(updatedTags);
+          localStorage.setItem('courseTags', JSON.stringify(updatedTags));
+        }
       }
     }
   };
+  
 
   const handleDeleteCourse = (id) => {
     const updatedCourses = localCourses.filter(course => course.id !== id);
