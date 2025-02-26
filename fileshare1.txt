@@ -1,0 +1,60 @@
+const handleEventDrop = useCallback((dropInfo) => {
+  clearHighlightedEvents();
+
+  const event = dropInfo.event;
+  const updatedEvent = {
+    id: event.id,
+    title: event.title,
+    start: event.startStr,
+    end: event.endStr,
+    extendedProps: {
+      ...event.extendedProps, // Preserve existing properties
+      rrule: event.extendedProps.rrule || null, // Ensure rrule is not lost
+    }
+  };
+
+  // Highlight conflicting events
+  const conflictingEvents = highlightConflictingEvents(updatedEvent);
+
+  // Validate dropped event
+  const { warnings } = validateEvent(updatedEvent);
+
+  if (warnings.length > 0) {
+    toast.info(
+      <WarningToastContent
+        warnings={warnings}
+        conflictingEvents={conflictingEvents}
+        onProceed={() => {
+          toast.dismiss();
+          clearHighlightedEvents();
+          saveEventToDB(updatedEvent);
+          setEvents(prevEvents => {
+            const updatedEvents = prevEvents.map(ev => 
+              ev.id === updatedEvent.id ? updatedEvent : ev
+            );
+            localStorage.setItem('events', JSON.stringify(updatedEvents));
+            return updatedEvents;
+          });
+        }}
+        onCancel={() => {
+          toast.dismiss();
+          clearHighlightedEvents();
+          dropInfo.revert();
+        }}
+      />,
+      { autoClose: false }
+    );
+    return;
+  }
+
+  // If no warnings, update event normally
+  clearHighlightedEvents();
+  saveEventToDB(updatedEvent);
+  setEvents(prevEvents => {
+    const updatedEvents = prevEvents.map(ev => 
+      ev.id === updatedEvent.id ? updatedEvent : ev
+    );
+    localStorage.setItem('events', JSON.stringify(updatedEvents));
+    return updatedEvents;
+  });
+}, [events]);
