@@ -525,44 +525,52 @@ const CalendarComponent = () => {
     return { warnings, conflictingEvents };
   };
 
-  // Handle dragging (eventDrop) with validations and highlighting
   const handleEventDrop = useCallback((dropInfo) => {
-    console.log("in handleEventDrop")
+    console.log("in handleEventDrop");
     // Clear any previously highlighted events
     clearHighlightedEvents();
     
-    const event = dropInfo.event; //drop position
-    const oldEvent = dropInfo.oldEvent; //first event
-    const originalEvent = events.find(ev=>ev.id===event.id) //drag position.
-
-  // Calculate the time shift (difference between the modified event and the original recurrence start)
-  const originalStart = new Date(originalEvent.start);
-  const modifiedStart = new Date(event.startStr);
-  const oldStart = new Date(oldEvent.startStr)
-  const timeShift =(modifiedStart.getTime() - oldStart.getTime());
-
-  console.log("timeShift")
-  console.log(timeShift)
-
-  // Create the updated event with a shifted start time
-  const updatedEvent = {
-    id: event.id,
-    title: event.title,
-    start: new Date((new Date(originalEvent.start)).getTime() + timeShift).toISOString(), // Shifted start time
-    end: new Date((new Date(originalEvent.end)).getTime() + timeShift).toISOString(), // Keep the modified end time
-    extendedProps: event.extendedProps,
-    rrule: originalEvent.rrule
-      ? {
-          ...originalEvent.rrule,
-          dtstart: new Date(originalStart.getTime() + timeShift).toISOString(), // Shifted recurrence start
-          until: new Date(new Date(originalEvent.rrule.until).getTime() + timeShift).toISOString()
-        }
-      : null
-  };
-  console.log("rrule::")
-  console.log(updatedEvent)
-
+    const event = dropInfo.event; // Drop position
+    const oldEvent = dropInfo.oldEvent; // First event
+    const originalEvent = events.find(ev => ev.id === event.id); // Original event
     
+    // Calculate the time shift (difference between the modified event and the original recurrence start)
+    const originalStart = new Date(originalEvent.start);
+    const modifiedStart = new Date(event.startStr);
+    const oldStart = new Date(oldEvent.startStr);
+    const timeShift = modifiedStart.getTime() - oldStart.getTime();
+  
+    console.log("timeShift");
+    console.log(timeShift);
+  
+    // Create the updated event with a shifted start time
+    const updatedEvent = {
+      id: event.id,
+      title: event.title,
+      start: new Date((new Date(originalEvent.start)).getTime() + timeShift).toISOString(), // Shifted start time
+      end: new Date((new Date(originalEvent.end)).getTime() + timeShift).toISOString(), // Keep the modified end time
+      extendedProps: event.extendedProps,
+      rrule: originalEvent.rrule
+        ? {
+            ...originalEvent.rrule,
+            dtstart: new Date(originalStart.getTime() + timeShift).toISOString(), // Shifted recurrence start
+            until: new Date(new Date(originalEvent.rrule.until).getTime() + timeShift).toISOString()
+          }
+        : null
+    };
+  
+    // Calculate the duration for recurring events (if applicable)
+    if (updatedEvent.rrule) {
+      const modifiedEnd = new Date(event.endStr);
+      updatedEvent.duration = {
+        hours: Math.floor((modifiedEnd - new Date(event.startStr)) / (1000 * 60 * 60)),
+        minutes: Math.round(((modifiedEnd - new Date(event.startStr)) % (1000 * 60 * 60)) / (1000 * 60))
+      };
+    }
+  
+    console.log("Updated event with duration:");
+    console.log(updatedEvent);
+  
     // Highlight conflicting events
     const conflictingEvents = highlightConflictingEvents(updatedEvent);
     
@@ -587,7 +595,7 @@ const CalendarComponent = () => {
           onCancel={() => {
             toast.dismiss();
             clearHighlightedEvents();
-            dropInfo.revert(); // revert drop if cancelled
+            dropInfo.revert(); // Revert drop if cancelled
           }}
         />,
         { autoClose: false }
@@ -597,13 +605,11 @@ const CalendarComponent = () => {
     
     // If no warnings, update event normally
     clearHighlightedEvents();
-    //event
-    console.log("drag and drop 1:")
-    console.log(event)
-    //updatedEvent
-    console.log("drag and drop 2:")
-
-    console.log(updatedEvent)
+    console.log("drag and drop 1:");
+    console.log(event);
+    console.log("drag and drop 2:");
+    console.log(updatedEvent);
+    
     saveEventToDB(updatedEvent);
     setEvents(prevEvents => {
       const updatedEvents = prevEvents.map(ev => ev.id === updatedEvent.id ? updatedEvent : ev);
@@ -611,66 +617,91 @@ const CalendarComponent = () => {
       return updatedEvents;
     });
   }, [events]);
+  
 
   // Handle event resize
-  const handleEventResize = useCallback((resizeInfo) => {
-    // Clear any previously highlighted events
-    clearHighlightedEvents();
-    
-    const event = resizeInfo.event;
-    const updatedEvent = {
-      id: event.id,
-      title: event.title,
-      start: event.startStr,
-      end: event.endStr,
-      extendedProps: 
-      {
-      ...event.extendedProps, 
-      rrule: event.extendedProps.rrule || null
-      }
-    };
-    
-    // Highlight conflicting events
-    const conflictingEvents = highlightConflictingEvents(updatedEvent);
-    
-    // Validate resized event
-    const { warnings } = validateEvent(updatedEvent);
-    
-    if (warnings.length > 0) {
-      toast.info(
-        <WarningToastContent
-          warnings={warnings}
-          conflictingEvents={conflictingEvents}
-          onProceed={() => {
-            toast.dismiss();
-            clearHighlightedEvents();
-            saveEventToDB(updatedEvent);
-            setEvents(prevEvents => {
-              const updatedEvents = prevEvents.map(ev => ev.id === updatedEvent.id ? updatedEvent : ev);
-              localStorage.setItem('events', JSON.stringify(updatedEvents));
-              return updatedEvents;
-            });
-          }}
-          onCancel={() => {
-            toast.dismiss();
-            clearHighlightedEvents();
-            resizeInfo.revert(); // revert resize if cancelled
-          }}
-        />,
-        { autoClose: false }
-      );
-      return;
-    }
-    
-    // If no warnings, update event normally
-    clearHighlightedEvents();
-    saveEventToDB(updatedEvent);
-    setEvents(prevEvents => {
-      const updatedEvents = prevEvents.map(ev => ev.id === updatedEvent.id ? updatedEvent : ev);
-      localStorage.setItem('events', JSON.stringify(updatedEvents));
-      return updatedEvents;
-    });
-  }, [events]);
+  // Handle event resize
+const handleEventResize = useCallback((resizeInfo) => {
+  // Clear any previously highlighted events
+  clearHighlightedEvents();
+  
+  const event = resizeInfo.event;
+  const oldEvent = resizeInfo.oldEvent;
+  const originalEvent = events.find(ev => ev.id === event.id);
+
+  // Calculate the time shift for the end time
+  const originalEnd = new Date(originalEvent.end);
+  const modifiedEnd = new Date(event.endStr);
+  const oldEnd = new Date(oldEvent.endStr);
+  const timeShift = (modifiedEnd.getTime() - oldEnd.getTime());
+
+  // Create the updated event with the proper shifted end time
+  const updatedEvent = {
+    id: event.id,
+    title: event.title,
+    start: originalEvent.start, // Keep original start time
+    end: new Date(originalEnd.getTime() + timeShift).toISOString(), // Shifted end time
+    extendedProps: originalEvent.extendedProps,
+    backgroundColor: originalEvent.backgroundColor,
+    rrule: originalEvent.rrule
+      ? {
+          ...originalEvent.rrule,
+          // Keep original dtstart
+          dtstart: originalEvent.rrule.dtstart,
+          // Keep original until
+          until: originalEvent.rrule.until
+        }
+      : null,
+    // Update duration for recurring events
+    duration: originalEvent.rrule
+      ? {
+          hours: Math.floor((modifiedEnd - new Date(event.startStr)) / (1000 * 60 * 60)),
+          minutes: Math.round(((modifiedEnd - new Date(event.startStr)) % (1000 * 60 * 60)) / (1000 * 60))
+        }
+      : null
+  };
+  
+  // Highlight conflicting events
+  const conflictingEvents = highlightConflictingEvents(updatedEvent);
+  
+  // Validate resized event
+  const { warnings } = validateEvent(updatedEvent);
+  
+  if (warnings.length > 0) {
+    toast.info(
+      <WarningToastContent
+        warnings={warnings}
+        conflictingEvents={conflictingEvents}
+        onProceed={() => {
+          toast.dismiss();
+          clearHighlightedEvents();
+          saveEventToDB(updatedEvent);
+          setEvents(prevEvents => {
+            const updatedEvents = prevEvents.map(ev => ev.id === updatedEvent.id ? updatedEvent : ev);
+            localStorage.setItem('events', JSON.stringify(updatedEvents));
+            return updatedEvents;
+          });
+        }}
+        onCancel={() => {
+          toast.dismiss();
+          clearHighlightedEvents();
+          resizeInfo.revert(); // revert resize if cancelled
+        }}
+      />,
+      { autoClose: false }
+    );
+    return;
+  }
+  
+  // If no warnings, update event normally
+  clearHighlightedEvents();
+  saveEventToDB(updatedEvent);
+  setEvents(prevEvents => {
+    const updatedEvents = prevEvents.map(ev => ev.id === updatedEvent.id ? updatedEvent : ev);
+    localStorage.setItem('events', JSON.stringify(updatedEvents));
+    return updatedEvents;
+  });
+}, [events]);
 
   // Handle update event (from modal)
   const handleUpdateEvent = useCallback((updatedEvent) => {
