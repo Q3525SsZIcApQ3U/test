@@ -24,6 +24,9 @@ const WarningToastContent = ({ warnings, onProceed, onCancel, conflictingEvents 
       {warnings.includes("SingleMeetingTime") && (
         <li>הקורס דורש מפגש של שעה אחת בדיוק.</li>
       )}
+      {warnings.includes("MinimumTimeGap") && (
+        <li>יש פחות מ-12 שעות בין מפגש זה למפגש אחר.</li>
+      )}
     </ul>
     <div className="warning-toast-buttons">
       <button onClick={onProceed} className="btn btn-primary">המשך</button>
@@ -165,11 +168,16 @@ const EventModal = ({
 
       const evStart = new Date(ev.start);
       const evEnd = new Date(ev.end);
-      
+      const hoursBetween = Math.abs(end - evEnd) / (1000 * 60 * 60);
+
       // Check for overlap
-      if (start < evEnd && evStart < end) {
+      if (start < evEnd && evStart < end && ev.extendedProps.trainerId ==  updatedEvent.extendedProps.trainerId ) {
         warnings.push("ScheduleAvailability");
         conflictingEvents.push(ev);
+      }
+      else if (hoursBetween < 12 &&ev.title==updatedEvent.title && ev.extendedProps.trainerId ==  updatedEvent.extendedProps.trainerId ) 
+      {
+        warnings.push("MinimumTimeGap");
       }
     }
 

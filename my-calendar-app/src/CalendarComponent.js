@@ -40,7 +40,7 @@ const WarningToastContent = ({ warnings, onProceed, onCancel, conflictingEvents 
             <ul>
               {conflictingEvents.map((event, index) => (
                 <li key={index}>
-                  <strong>{event.title}</strong>: {new Date(event.start).toLocaleTimeString('he-IL')} - {new Date(event.end).toLocaleTimeString('he-IL')}
+                  <strong>{event.title}</strong>: {new Date(event.start).toISOString().slice(11, 19)} - {new Date(event.end).toISOString().slice(11, 19)}
                 </li>
               ))}
             </ul>
@@ -49,6 +49,9 @@ const WarningToastContent = ({ warnings, onProceed, onCancel, conflictingEvents 
       )}
       {warnings.includes("SingleMeetingTime") && (
         <li>הקורס דורש מפגש של שעה אחת בדיוק.</li>
+      )}
+      {warnings.includes("MinimumTimeGap") && (
+        <li>יש פחות מ-12 שעות בין מפגש זה למפגש אחר.</li>
       )}
     </ul>
     <div className="warning-toast-buttons">
@@ -517,31 +520,38 @@ const CalendarComponent = () => {
 
   // Validate an event for conflicts
   const validateEvent = (updatedEvent) => {
+    console.log("validateEvent2");
     const warnings = [];
     const conflictingEvents = [];
     const start = new Date(updatedEvent.start);
     const end = new Date(updatedEvent.end);
     const meetingDuration = (end - start) / (1000 * 60);
-
+    
     // Check meeting duration
     if (meetingDuration !== 60) {
       warnings.push("SingleMeetingTime");
     }
-
+    
     // Check for scheduling conflicts
     events.forEach(ev => {
       if (ev.id === updatedEvent.id) return; // Skip the current event
       
       const evStart = new Date(ev.start);
       const evEnd = new Date(ev.end);
-      
+      const hoursBetween = Math.abs(end - evEnd) / (1000 * 60 * 60);
       // Check for overlap
-      if (start < evEnd && evStart < end) {
+      if (start < evEnd && evStart < end && ev.extendedProps.trainerId ==  updatedEvent.extendedProps.trainerId ) {
         warnings.push("ScheduleAvailability");
         conflictingEvents.push(ev);
       }
+      
+      // Check if events are less than 12 hours apart
+      
+      else if (hoursBetween < 12 && ev.title==updatedEvent.title && ev.extendedProps.trainerId ==  updatedEvent.extendedProps.trainerId ) {
+        warnings.push("MinimumTimeGap");
+      }
     });
-
+    
     return { warnings, conflictingEvents };
   };
 
