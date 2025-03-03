@@ -844,3 +844,101 @@ textarea.form-input {
 select.form-input option[value=""] {
   color: #6c757d;
 }
+/* Fullscreen Calendar Modifications */
+
+/* Make calendar container take full screen */
+.calendar-container.modern {
+  width: 100%;
+  max-width: 100%; /* Remove max-width limitation */
+  margin: 0;
+  padding: 0;
+  border-radius: 0; /* Remove border radius for full screen */
+  box-shadow: none; /* Remove shadow for full screen */
+  height: 100vh; /* Use viewport height */
+  display: flex;
+  flex-direction: column;
+}
+
+/* Adjust calendar body to fill available space */
+.fc {
+  max-width: 100%;
+  height: 100%; /* Make FullCalendar take full height */
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Make the calendar view fill the container */
+.fc .fc-view-harness {
+  flex: 1;
+  min-height: 0; /* Important for flex containers */
+}
+
+/* Adjust header to be more compact */
+.calendar-header {
+  padding: 10px 20px;
+  margin-bottom: 0;
+}
+
+/* Make modal overlay truly fullscreen */
+.modal-overlay {
+  z-index: 2000;
+}
+
+/* Ensure body and html are set up for fullscreen */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden; /* Prevent scrolling */
+}
+
+/* Adjust toolbar for better full screen layout */
+.fc .fc-toolbar.fc-header-toolbar {
+  margin-bottom: 0.5em;
+  padding: 0 12px;
+}
+
+/* Make sure the calendar grid fills available space */
+.fc .fc-view {
+  height: 100% !important;
+}
+
+/* Ensure time grid fills height */
+.fc .fc-timegrid, 
+.fc .fc-daygrid-body, 
+.fc .fc-scrollgrid, 
+.fc .fc-scrollgrid-liquid {
+  height: 100% !important;
+}
+
+/* Remove any padding that might prevent true fullscreen */
+.fc-theme-standard .fc-scrollgrid {
+  border-right-width: 0;
+  border-bottom-width: 0;
+}
+
+/* Ensure time slots are properly sized */
+.fc .fc-timegrid-slot {
+  height: 1.5em;
+}
+
+/* Optimize for mobile fullscreen */
+@media (max-width: 768px) {
+  .calendar-header {
+    padding: 8px;
+  }
+  
+  .header-buttons {
+    gap: 5px;
+  }
+  
+  .btn, .icon-button {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+  
+  .fc .fc-toolbar-title {
+    font-size: 1rem !important;
+  }
+}
