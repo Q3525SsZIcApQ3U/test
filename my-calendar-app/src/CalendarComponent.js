@@ -365,10 +365,15 @@ const CalendarComponent = () => {
 
   // Handle date selection (creating a new event)
   const handleDateSelect = useCallback((selectInfo) => {
-    console.log("selectedInfo:")
-    console.log(selectInfo)
     // Clear any previously highlighted events
     clearHighlightedEvents();
+    
+    // Find default course for initial color
+    const defaultCourse = courses.length > 0 ? courses[0] : null;
+    const defaultColor = defaultCourse?.color?.bg || '#3788d8';
+    
+    // Check if this is an all-day selection
+    const isAllDay = selectInfo.allDay;
     
     // Create new event object
     const newEvent = {
@@ -376,22 +381,37 @@ const CalendarComponent = () => {
       title: 'שיעור חדש',
       start: selectInfo.startStr,
       end: selectInfo.endStr,
+      backgroundColor: defaultColor,
+      allDay: isAllDay,
       extendedProps: {
         description: '',
         location: '',
-        courseId: '',
-        // if filtering by trainer, default to that trainer:
-        trainerId: selectedTrainerFilter || ''
+        courseId: defaultCourse?.id || '',
+        trainerId: selectedTrainerFilter || '',
+        isAllDay: isAllDay
       }
     };
     
-    // Highlight any conflicting events
-    highlightConflictingEvents(newEvent);
+    // Add the event temporarily to the calendar
+    const calendarApi = selectInfo.view.calendar;
+    calendarApi.unselect(); // clear date selection
+    
+    // Add event to state temporarily
+    setEvents(prevEvents => {
+      const updatedEvents = [...prevEvents, newEvent];
+      return updatedEvents;
+    });
+    
+    // For all-day events, don't highlight conflicts
+    if (!isAllDay) {
+      // Highlight any conflicting events
+      highlightConflictingEvents(newEvent);
+    }
     
     // Open modal with new event
     setSelectedEvent(newEvent);
     setIsModalOpen(true);
-  }, [selectedTrainerFilter, events]);
+  }, [selectedTrainerFilter, courses, events]);
 
   // Handle clicking on an existing event
   const handleEventClick = useCallback((clickInfo) => {
@@ -550,6 +570,7 @@ const CalendarComponent = () => {
       start: new Date((new Date(originalEvent.start)).getTime() + timeShift).toISOString(), // Shifted start time
       end: new Date((new Date(originalEvent.end)).getTime() + timeShift).toISOString(), // Keep the modified end time
       extendedProps: event.extendedProps,
+      backgroundColor: event.backgroundColor,
       rrule: originalEvent.rrule
         ? {
             ...originalEvent.rrule,
