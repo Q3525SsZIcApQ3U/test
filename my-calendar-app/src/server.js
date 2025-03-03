@@ -395,6 +395,33 @@ app.delete('/api/trainers/:id', async (req, res) => {
   }
 });
 
+const fs = require('fs');
+
+const filePath = path.join(__dirname, 'text_editor_content.txt');
+
+// Route to fetch editor content (GET)
+app.get('/api/text-editor', (req, res) => {
+  try {
+    const content = fs.readFileSync(filePath, 'utf8');
+    res.status(200).json({ content });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/text-editor', async (req, res) => {
+  try {
+    const { content } = req.body;
+
+    fs.writeFileSync(filePath, content, 'utf8');
+    
+    res.status(200).json({ message: 'Content saved successfully' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
 // Initialize default data
 const initializeDefaultData = async () => {
   try {

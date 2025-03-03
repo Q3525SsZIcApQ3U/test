@@ -557,7 +557,7 @@ textarea.form-input {
   border-radius: var(--radius-sm) !important;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
   overflow: hidden !important;
-  transition: transform var(--transition-fast), box-shadow var(--transition-fast) !important;
+  /* transition: transform var(--transition-fast), box-shadow var(--transition-fast) !important; */
 }
 
 .fc-event:hover {
@@ -1677,4 +1677,77 @@ border-bottom: 1px solid rgba(185, 28, 28, 0.2);
 
 .dark .fc-timegrid-allday {
   background-color: rgba(255, 255, 255, 0.03);
+}
+
+
+/* Background Options in Settings */
+.background-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 15px;
+  margin: 15px 0;
+}
+
+.background-option {
+  position: relative;
+  height: 80px;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  border: 2px solid transparent;
+}
+
+.background-option:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.background-option.selected {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+}
+
+.bg-name {
+  padding: 4px 8px;
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.bg-delete-btn {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.9);
+  color: #dc2626;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 14px;
+  opacity: 0.8;
+  transition: all 0.2s;
+}
+
+.bg-delete-btn:hover {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+/* Preview Background */
+.preview-background {
+  background-color: var(--preview-bg-color);
+  padding: 15px;
+  border-radius: 8px;
+  margin-top: 15px;
 }
