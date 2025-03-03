@@ -11,7 +11,6 @@ function App() {
   const [isDarkMode, setIsDarkMode] = useState(() => {
     return localStorage.getItem('darkMode') === 'true';
   });
-  const [isLoading, setIsLoading] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Apply dark mode to the entire app
@@ -25,26 +24,12 @@ function App() {
     localStorage.setItem('darkMode', isDarkMode);
   }, [isDarkMode]);
 
-  // Simulate loading for a smoother experience
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 600);
-    return () => clearTimeout(timer);
-  }, []);
-
   const toggleSidebar = () => {
     setIsSidebarOpen(prev => !prev);
   };
 
   return (
     <div className={`app-container ${isDarkMode ? 'dark' : ''}`}>
-      {isLoading ? (
-        <div className="loading-screen">
-          <div className="loading-spinner"></div>
-          <div className="loading-text">Loading your calendar</div>
-        </div>
-      ) : (
         <div className="main-container">
           {/* Button to toggle the sidebar */}
           <button className="toggle-sidebar-button" onClick={toggleSidebar}>
