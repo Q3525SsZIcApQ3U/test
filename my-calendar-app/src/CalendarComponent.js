@@ -10,6 +10,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import './Calendar.css';
 import SettingsComponent from './SettingsComponent';
 import EventModal from './EventModal';
+import TodoComponent from './TodoComponent';
 
 // API base URL
 const API_BASE_URL = 'http://localhost:5001/api';
@@ -71,11 +72,23 @@ const DeleteConfirmationToast = ({ event, onConfirm, onCancel }) => (
 );
 
 /* -------------------------- Main Calendar Component -------------------------- */
-const CalendarComponent = () => {
-  // State for UI options
-  const [isDarkMode, setIsDarkMode] = useState(() => {
+const CalendarComponent = ({ isDarkMode, setIsDarkMode }) => {
+  // If props are not provided, use local state
+  const [localDarkMode, setLocalDarkMode] = useState(() => {
     return localStorage.getItem('darkMode') === 'true';
   });
+  
+  // Use props if available, otherwise use local state
+  const effectiveDarkMode = isDarkMode !== undefined ? isDarkMode : localDarkMode;
+  const handleToggleDarkMode = useCallback(() => {
+    if (setIsDarkMode) {
+      setIsDarkMode(!effectiveDarkMode);
+    } else {
+      setLocalDarkMode(!effectiveDarkMode);
+    }
+  }, [effectiveDarkMode, setIsDarkMode]);
+  
+  // State for UI options
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
@@ -90,21 +103,26 @@ const CalendarComponent = () => {
     slotMaxTime: "22:00:00"
   });
   
+  // State for app tabs
+  const [activeTab, setActiveTab] = useState('calendar');
+  
   // Refs
   const calendarRef = useRef(null);
   const highlightedEventRef = useRef(null);
   
-  // Persist dark mode
+  // Persist dark mode if we're using local state
   useEffect(() => {
-    localStorage.setItem('darkMode', isDarkMode);
-    
-    // Apply dark mode to document body for consistent styling
-    if (isDarkMode) {
-      document.body.classList.add('dark-mode');
-    } else {
-      document.body.classList.remove('dark-mode');
+    if (isDarkMode === undefined) {
+      localStorage.setItem('darkMode', localDarkMode);
+      
+      // Apply dark mode to document body for consistent styling
+      if (localDarkMode) {
+        document.body.classList.add('dark-mode');
+      } else {
+        document.body.classList.remove('dark-mode');
+      }
     }
-  }, [isDarkMode]);
+  }, [localDarkMode, isDarkMode]);
 
   // Load data from localStorage on mount
   useEffect(() => {
@@ -129,7 +147,18 @@ const CalendarComponent = () => {
         slotMaxTime: parsedWorkHours.endTime
       });
     }
+    
+    // Load active tab from localStorage if exists
+    const savedTab = localStorage.getItem('activeTab');
+    if (savedTab) {
+      setActiveTab(savedTab);
+    }
   }, []);
+
+  // Save active tab to localStorage when it changes
+  useEffect(() => {
+    localStorage.setItem('activeTab', activeTab);
+  }, [activeTab]);
 
   // Fetch courses if not in localStorage
   useEffect(() => {
@@ -235,7 +264,8 @@ const CalendarComponent = () => {
             duration: parsedDuration,
             start: new Date(event.start).toISOString(),
             end: new Date(event.end).toISOString(),
-            backgroundColor: course?.color?.bg || event.backgroundColor || '#3788d8'
+            backgroundColor: course?.color?.bg || event.backgroundColor || '#3788d8',
+            allDay: event.allDay || parsedExtendedProps?.isAllDay || false
           };
         });
         
@@ -277,12 +307,7 @@ const CalendarComponent = () => {
       }
     };
     
-    // if (courses.length > 0) {
-    //   fetchEvents();
-    // }
-
     fetchEvents();
-
   }, [courses]);
 
   // Update events when courses change to reflect any new course settings (such as colors)
@@ -301,8 +326,6 @@ const CalendarComponent = () => {
 
   // Filter events by trainer if filter is active
   const filteredEvents = useMemo(() => {
-    console.log("print events before filter:")
-    console.log(events)
     if (!selectedTrainerFilter) return events;
     return events.filter(event => event.extendedProps?.trainerId === selectedTrainerFilter);
   }, [events, selectedTrainerFilter]);
@@ -314,14 +337,18 @@ const CalendarComponent = () => {
     const calendarApi = calendarRef.current.getApi();
     const conflictingEvents = [];
     
+    // Skip conflict checking for all-day events
+    if (newEvent.allDay || newEvent.extendedProps?.isAllDay) {
+      return [];
+    }
+    
     // Find conflicting events
     const start = new Date(newEvent.start);
     const end = new Date(newEvent.end);
-    console.log("highlightConflictingEvents:");
-    console.log(events);
 
     events.forEach(event => {
       if (event.id === newEvent.id) return; // Skip the current event
+      if (event.allDay || event.extendedProps?.isAllDay) return; // Skip all-day events
       
       const eventStart = new Date(event.start);
       const eventEnd = new Date(event.end);
@@ -365,10 +392,15 @@ const CalendarComponent = () => {
 
   // Handle date selection (creating a new event)
   const handleDateSelect = useCallback((selectInfo) => {
-    console.log("selectedInfo:")
-    console.log(selectInfo)
     // Clear any previously highlighted events
     clearHighlightedEvents();
+    
+    // Find default course for initial color
+    const defaultCourse = courses.length > 0 ? courses[0] : null;
+    const defaultColor = defaultCourse?.color?.bg || '#3788d8';
+    
+    // Check if this is an all-day selection
+    const isAllDay = selectInfo.allDay;
     
     // Create new event object
     const newEvent = {
@@ -376,22 +408,37 @@ const CalendarComponent = () => {
       title: 'שיעור חדש',
       start: selectInfo.startStr,
       end: selectInfo.endStr,
+      backgroundColor: defaultColor,
+      allDay: isAllDay,
       extendedProps: {
         description: '',
         location: '',
-        courseId: '',
-        // if filtering by trainer, default to that trainer:
-        trainerId: selectedTrainerFilter || ''
+        courseId: defaultCourse?.id || '',
+        trainerId: selectedTrainerFilter || '',
+        isAllDay: isAllDay
       }
     };
     
-    // Highlight any conflicting events
-    highlightConflictingEvents(newEvent);
+    // Add the event temporarily to the calendar
+    const calendarApi = selectInfo.view.calendar;
+    calendarApi.unselect(); // clear date selection
+    
+    // Add event to state temporarily
+    setEvents(prevEvents => {
+      const updatedEvents = [...prevEvents, newEvent];
+      return updatedEvents;
+    });
+    
+    // For all-day events, don't highlight conflicts
+    if (!isAllDay) {
+      // Highlight any conflicting events
+      highlightConflictingEvents(newEvent);
+    }
     
     // Open modal with new event
     setSelectedEvent(newEvent);
     setIsModalOpen(true);
-  }, [selectedTrainerFilter, events]);
+  }, [selectedTrainerFilter, courses, events]);
 
   // Handle clicking on an existing event
   const handleEventClick = useCallback((clickInfo) => {
@@ -420,12 +467,13 @@ const CalendarComponent = () => {
             title: event.title,
             start: event.start,
             end: event.end,
-            // rrule: event.rrule, //TODO
+            allDay: event.allDay,
             extendedProps: { 
               ...event.extendedProps, 
               originalEventId: event.id, 
               originalDate: event.startStr, 
-              isException: true 
+              isException: true,
+              isAllDay: event.allDay || event.extendedProps?.isAllDay
             },
             backgroundColor: event.backgroundColor,
             isException: true
@@ -440,12 +488,14 @@ const CalendarComponent = () => {
             title: `${event.title} (מבוטל)`,
             start: event.start,
             end: event.end,
+            allDay: event.allDay,
             extendedProps: { 
               ...event.extendedProps, 
               originalEventId: event.id, 
               originalDate: event.startStr, 
               isCancelled: true, 
-              isException: true 
+              isException: true,
+              isAllDay: event.allDay || event.extendedProps?.isAllDay
             },
             backgroundColor: '#e5e7eb',
             textColor: '#9ca3af',
@@ -477,7 +527,8 @@ const CalendarComponent = () => {
         extendedProps: JSON.stringify(event.extendedProps || {}),
         rrule: event.rrule ? JSON.stringify(event.rrule) : null,
         duration: event.duration ? JSON.stringify(event.duration) : null,
-        backgroundColor: event.backgroundColor
+        backgroundColor: event.backgroundColor,
+        allDay: event.allDay || event.extendedProps?.isAllDay || false
       };
       
       // Check if event is new or existing
@@ -499,6 +550,12 @@ const CalendarComponent = () => {
   const validateEvent = (updatedEvent) => {
     const warnings = [];
     const conflictingEvents = [];
+    
+    // Skip conflict validation for all-day events
+    if (updatedEvent.allDay || updatedEvent.extendedProps?.isAllDay) {
+      return { warnings, conflictingEvents };
+    }
+    
     const start = new Date(updatedEvent.start);
     const end = new Date(updatedEvent.end);
     const meetingDuration = (end - start) / (1000 * 60);
@@ -511,6 +568,7 @@ const CalendarComponent = () => {
     // Check for scheduling conflicts
     events.forEach(ev => {
       if (ev.id === updatedEvent.id) return; // Skip the current event
+      if (ev.allDay || ev.extendedProps?.isAllDay) return; // Skip all-day events
       
       const evStart = new Date(ev.start);
       const evEnd = new Date(ev.end);
@@ -526,7 +584,6 @@ const CalendarComponent = () => {
   };
 
   const handleEventDrop = useCallback((dropInfo) => {
-    console.log("in handleEventDrop");
     // Clear any previously highlighted events
     clearHighlightedEvents();
     
@@ -534,14 +591,45 @@ const CalendarComponent = () => {
     const oldEvent = dropInfo.oldEvent; // First event
     const originalEvent = events.find(ev => ev.id === event.id); // Original event
     
-    // Calculate the time shift (difference between the modified event and the original recurrence start)
+    if (!originalEvent) return;
+    
+    // For all-day events, construct a simpler update
+    if (event.allDay || event.extendedProps?.isAllDay) {
+      const updatedEvent = {
+        ...originalEvent,
+        start: event.startStr,
+        end: event.endStr,
+        allDay: true,
+        extendedProps: {
+          ...originalEvent.extendedProps,
+          isAllDay: true
+        }
+      };
+      
+      // If there's a recurring rule, update it
+      if (updatedEvent.rrule) {
+        updatedEvent.rrule = {
+          ...updatedEvent.rrule,
+          dtstart: event.startStr
+        };
+      }
+      
+      // Save directly without conflict checking
+      saveEventToDB(updatedEvent);
+      setEvents(prevEvents => {
+        const updatedEvents = prevEvents.map(ev => ev.id === updatedEvent.id ? updatedEvent : ev);
+        localStorage.setItem('events', JSON.stringify(updatedEvents));
+        return updatedEvents;
+      });
+      
+      return;
+    }
+    
+    // For regular events, handle as before with time shifts
     const originalStart = new Date(originalEvent.start);
     const modifiedStart = new Date(event.startStr);
     const oldStart = new Date(oldEvent.startStr);
     const timeShift = modifiedStart.getTime() - oldStart.getTime();
-  
-    console.log("timeShift");
-    console.log(timeShift);
   
     // Create the updated event with a shifted start time
     const updatedEvent = {
@@ -550,6 +638,7 @@ const CalendarComponent = () => {
       start: new Date((new Date(originalEvent.start)).getTime() + timeShift).toISOString(), // Shifted start time
       end: new Date((new Date(originalEvent.end)).getTime() + timeShift).toISOString(), // Keep the modified end time
       extendedProps: event.extendedProps,
+      allDay: event.allDay,
       rrule: originalEvent.rrule
         ? {
             ...originalEvent.rrule,
@@ -560,16 +649,13 @@ const CalendarComponent = () => {
     };
   
     // Calculate the duration for recurring events (if applicable)
-    if (updatedEvent.rrule) {
+    if (updatedEvent.rrule && !updatedEvent.allDay) {
       const modifiedEnd = new Date(event.endStr);
       updatedEvent.duration = {
         hours: Math.floor((modifiedEnd - new Date(event.startStr)) / (1000 * 60 * 60)),
         minutes: Math.round(((modifiedEnd - new Date(event.startStr)) % (1000 * 60 * 60)) / (1000 * 60))
       };
     }
-  
-    console.log("Updated event with duration:");
-    console.log(updatedEvent);
   
     // Highlight conflicting events
     const conflictingEvents = highlightConflictingEvents(updatedEvent);
@@ -605,10 +691,6 @@ const CalendarComponent = () => {
     
     // If no warnings, update event normally
     clearHighlightedEvents();
-    console.log("drag and drop 1:");
-    console.log(event);
-    console.log("drag and drop 2:");
-    console.log(updatedEvent);
     
     saveEventToDB(updatedEvent);
     setEvents(prevEvents => {
@@ -620,87 +702,112 @@ const CalendarComponent = () => {
   
 
   // Handle event resize
-  // Handle event resize
-const handleEventResize = useCallback((resizeInfo) => {
-  // Clear any previously highlighted events
-  clearHighlightedEvents();
-  
-  const event = resizeInfo.event;
-  const oldEvent = resizeInfo.oldEvent;
-  const originalEvent = events.find(ev => ev.id === event.id);
-
-  // Calculate the time shift for the end time
-  const originalEnd = new Date(originalEvent.end);
-  const modifiedEnd = new Date(event.endStr);
-  const oldEnd = new Date(oldEvent.endStr);
-  const timeShift = (modifiedEnd.getTime() - oldEnd.getTime());
-
-  // Create the updated event with the proper shifted end time
-  const updatedEvent = {
-    id: event.id,
-    title: event.title,
-    start: originalEvent.start, // Keep original start time
-    end: new Date(originalEnd.getTime() + timeShift).toISOString(), // Shifted end time
-    extendedProps: originalEvent.extendedProps,
-    rrule: originalEvent.rrule
-      ? {
-          ...originalEvent.rrule,
-          // Keep original dtstart
-          dtstart: originalEvent.rrule.dtstart,
-          // Keep original until
-          until: originalEvent.rrule.until
+  const handleEventResize = useCallback((resizeInfo) => {
+    // Clear any previously highlighted events
+    clearHighlightedEvents();
+    
+    const event = resizeInfo.event;
+    const oldEvent = resizeInfo.oldEvent;
+    const originalEvent = events.find(ev => ev.id === event.id);
+    
+    if (!originalEvent) return;
+    
+    // For all-day events, just update the end date
+    if (event.allDay || event.extendedProps?.isAllDay) {
+      const updatedEvent = {
+        ...originalEvent,
+        end: event.endStr,
+        allDay: true,
+        extendedProps: {
+          ...originalEvent.extendedProps,
+          isAllDay: true
         }
-      : null,
-    // Update duration for recurring events
-    duration: originalEvent.rrule
-      ? {
-          hours: Math.floor((modifiedEnd - new Date(event.startStr)) / (1000 * 60 * 60)),
-          minutes: Math.round(((modifiedEnd - new Date(event.startStr)) % (1000 * 60 * 60)) / (1000 * 60))
-        }
-      : null
-  };
-  
-  // Highlight conflicting events
-  const conflictingEvents = highlightConflictingEvents(updatedEvent);
-  
-  // Validate resized event
-  const { warnings } = validateEvent(updatedEvent);
-  
-  if (warnings.length > 0) {
-    toast.info(
-      <WarningToastContent
-        warnings={warnings}
-        conflictingEvents={conflictingEvents}
-        onProceed={() => {
-          toast.dismiss();
-          clearHighlightedEvents();
-          saveEventToDB(updatedEvent);
-          setEvents(prevEvents => {
-            const updatedEvents = prevEvents.map(ev => ev.id === updatedEvent.id ? updatedEvent : ev);
-            localStorage.setItem('events', JSON.stringify(updatedEvents));
-            return updatedEvents;
-          });
-        }}
-        onCancel={() => {
-          toast.dismiss();
-          clearHighlightedEvents();
-          resizeInfo.revert(); // revert resize if cancelled
-        }}
-      />,
-      { autoClose: false }
-    );
-    return;
-  }
-  
-  // If no warnings, update event normally
-  clearHighlightedEvents();
-  saveEventToDB(updatedEvent);
-  setEvents(prevEvents => {
-    const updatedEvents = prevEvents.map(ev => ev.id === updatedEvent.id ? updatedEvent : ev);
-    localStorage.setItem('events', JSON.stringify(updatedEvents));
-    return updatedEvents;
-  });
-}, [events]);
+      };
+      
+      // Save directly without conflict checking
+      saveEventToDB(updatedEvent);
+      setEvents(prevEvents => {
+        const updatedEvents = prevEvents.map(ev => ev.id === updatedEvent.id ? updatedEvent : ev);
+        localStorage.setItem('events', JSON.stringify(updatedEvents));
+        return updatedEvents;
+      });
+      
+      return;
+    }
+
+    // For regular events, handle as before
+    const originalEnd = new Date(originalEvent.end);
+    const modifiedEnd = new Date(event.endStr);
+    const oldEnd = new Date(oldEvent.endStr);
+    const timeShift = (modifiedEnd.getTime() - oldEnd.getTime());
+
+    // Create the updated event with the proper shifted end time
+    const updatedEvent = {
+      id: event.id,
+      title: event.title,
+      start: originalEvent.start, // Keep original start time
+      end: new Date(originalEnd.getTime() + timeShift).toISOString(), // Shifted end time
+      extendedProps: originalEvent.extendedProps,
+      allDay: event.allDay,
+      rrule: originalEvent.rrule
+        ? {
+            ...originalEvent.rrule,
+            // Keep original dtstart
+            dtstart: originalEvent.rrule.dtstart,
+            // Keep original until
+            until: originalEvent.rrule.until
+          }
+        : null,
+      // Update duration for recurring events
+      duration: originalEvent.rrule && !event.allDay
+        ? {
+            hours: Math.floor((modifiedEnd - new Date(event.startStr)) / (1000 * 60 * 60)),
+            minutes: Math.round(((modifiedEnd - new Date(event.startStr)) % (1000 * 60 * 60)) / (1000 * 60))
+          }
+        : null
+    };
+    
+    // Highlight conflicting events
+    const conflictingEvents = highlightConflictingEvents(updatedEvent);
+    
+    // Validate resized event
+    const { warnings } = validateEvent(updatedEvent);
+    
+    if (warnings.length > 0) {
+      toast.info(
+        <WarningToastContent
+          warnings={warnings}
+          conflictingEvents={conflictingEvents}
+          onProceed={() => {
+            toast.dismiss();
+            clearHighlightedEvents();
+            saveEventToDB(updatedEvent);
+            setEvents(prevEvents => {
+              const updatedEvents = prevEvents.map(ev => ev.id === updatedEvent.id ? updatedEvent : ev);
+              localStorage.setItem('events', JSON.stringify(updatedEvents));
+              return updatedEvents;
+            });
+          }}
+          onCancel={() => {
+            toast.dismiss();
+            clearHighlightedEvents();
+            resizeInfo.revert(); // revert resize if cancelled
+          }}
+        />,
+        { autoClose: false }
+      );
+      return;
+    }
+    
+    // If no warnings, update event normally
+clearHighlightedEvents();
+    saveEventToDB(updatedEvent);
+    setEvents(prevEvents => {
+      const updatedEvents = prevEvents.map(ev => ev.id === updatedEvent.id ? updatedEvent : ev);
+      localStorage.setItem('events', JSON.stringify(updatedEvents));
+      return updatedEvents;
+    });
+  }, [events]);
 
   // Handle update event (from modal)
   const handleUpdateEvent = useCallback((updatedEvent) => {
@@ -888,28 +995,51 @@ const handleEventResize = useCallback((resizeInfo) => {
       const eventLines = [
         'BEGIN:VEVENT',
         `UID:${event.id}@academiccalendar.com`,
-        `DTSTAMP:${formatDate(new Date().toISOString())}`,
-        `DTSTART:${formatDate(event.start)}`
+        `DTSTAMP:${formatDate(new Date().toISOString())}`
       ];
       
-      // Add end time for non-recurring events
-      if (!event.rrule) {
-        eventLines.push(`DTEND:${formatDate(event.end)}`);
-      }
-      
-      // Add recurrence rule and duration for recurring events
-      if (event.rrule) {
-        const rruleStr = [
-          'RRULE:FREQ=WEEKLY',
-          `UNTIL=${formatDate(event.rrule.until)}`,
-          `INTERVAL=${event.rrule.interval || 1}`
-        ].join(';');
+      // Handle all-day events differently
+      if (event.allDay || event.extendedProps?.isAllDay) {
+        // All-day events use DATE format without time
+        const startDate = new Date(event.start);
+        const endDate = new Date(event.end);
         
-        eventLines.push(rruleStr);
+        // Format as YYYYMMDD for all-day events (no time component)
+        const formatAllDayDate = (date) => {
+          return date.toISOString().split('T')[0].replace(/-/g, '');
+        };
         
-        if (event.duration) {
-          const duration = `PT${event.duration.hours || 0}H${event.duration.minutes || 0}M`;
-          eventLines.push(`DURATION:${duration}`);
+        eventLines.push(`DTSTART;VALUE=DATE:${formatAllDayDate(startDate)}`);
+        
+        // For all-day events, iCal expects end date to be the day after the last day
+        // (exclusive end date), so add 1 day to the end date
+        if (endDate) {
+          endDate.setDate(endDate.getDate() + 1);
+          eventLines.push(`DTEND;VALUE=DATE:${formatAllDayDate(endDate)}`);
+        }
+      } else {
+        // Regular events with specific times
+        eventLines.push(`DTSTART:${formatDate(event.start)}`);
+        
+        // Add end time for non-recurring events
+        if (!event.rrule) {
+          eventLines.push(`DTEND:${formatDate(event.end)}`);
+        }
+        
+        // Add recurrence rule and duration for recurring events
+        if (event.rrule) {
+          const rruleStr = [
+            'RRULE:FREQ=WEEKLY',
+            `UNTIL=${formatDate(event.rrule.until)}`,
+            `INTERVAL=${event.rrule.interval || 1}`
+          ].join(';');
+          
+          eventLines.push(rruleStr);
+          
+          if (event.duration) {
+            const duration = `PT${event.duration.hours || 0}H${event.duration.minutes || 0}M`;
+            eventLines.push(`DURATION:${duration}`);
+          }
         }
       }
       
@@ -962,6 +1092,7 @@ const handleEventResize = useCallback((resizeInfo) => {
     const event = eventInfo.event;
     const isCancelled = event.extendedProps?.isCancelled;
     const isException = event.extendedProps?.isException;
+    const isAllDay = event.allDay || event.extendedProps?.isAllDay;
     const trainer = trainers.find(t => t.id === event.extendedProps?.trainerId);
     
     // Find course to get tags
@@ -971,6 +1102,23 @@ const handleEventResize = useCallback((resizeInfo) => {
     const fullTitle = event.title;
     const displayTitle = fullTitle.length > 15 ? fullTitle.substring(0,15) + '...' : fullTitle;
     
+    // If it's an all-day event, use a more compact display
+    if (isAllDay) {
+      return (
+        <div className={`event-content all-day-event ${isException ? 'exception' : ''} ${isCancelled ? 'cancelled' : ''}`}
+          style={{ fontSize: '0.8em' }}
+          title={fullTitle}
+        >
+          <div className="event-title">
+            {isException && !isCancelled && <span className="exception-indicator">⚡</span>}
+            {isCancelled && <span className="cancelled-indicator">🚫</span>}
+            {displayTitle}
+          </div>
+        </div>
+      );
+    }
+    
+    // For regular time-bound events
     return (
       <div className={`event-content ${isException ? 'exception' : ''} ${isCancelled ? 'cancelled' : ''}`}
         style={{ fontSize: '0.8em' }}
@@ -1000,83 +1148,112 @@ const handleEventResize = useCallback((resizeInfo) => {
   };
 
   return (
-    <div className={`calendar-container modern ${isDarkMode ? 'dark' : ''}`}>
-      {/* Calendar Header */}
-      <div className="calendar-header">
-        <div className="header-buttons">
-          <button 
-            className="theme-toggle" 
-            onClick={() => setIsDarkMode(!isDarkMode)} 
-            title="החלף מצב תצוגה"
-          >
-            {isDarkMode ? '🌞' : '🌙'}
-          </button>
-          <button 
-            className="settings-button" 
-            onClick={() => setIsSettingsOpen(true)} 
-            title="הגדרות"
-          >
-            ⚙️ הגדרות
-          </button>
-          <select
-            className="trainer-filter"
-            value={selectedTrainerFilter}
-            onChange={(e) => setSelectedTrainerFilter(e.target.value)}
-            title="סנן לפי מאמן"
-          >
-            <option value="">כל המאמנים</option>
-            {trainers.map(trainer => (
-              <option key={trainer.id} value={trainer.id}>
-                {trainer.name}
-              </option>
-            ))}
-          </select>
-          <button 
-            className="export-button" 
-            onClick={exportToICS} 
-            title="ייצא לוח שנה"
-          >
-            ⬇️ ייצא ל-ICS
-          </button>
+    <div className={`calendar-container modern ${effectiveDarkMode ? 'dark' : ''}`}>
+      {/* App Tabs */}
+      <div className="app-tabs">
+        <div 
+          className={`app-tab ${activeTab === 'calendar' ? 'active' : ''}`}
+          onClick={() => setActiveTab('calendar')}
+        >
+          לוח שנה
+        </div>
+        <div 
+          className={`app-tab ${activeTab === 'todo' ? 'active' : ''}`}
+          onClick={() => setActiveTab('todo')}
+        >
+          משימות
         </div>
       </div>
       
       {/* Calendar View */}
-      <div className="calendar-wrapper">
-        <FullCalendar
-          timeZone="UTC"
-          ref={calendarRef}
-          plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, rrulePlugin]}
-          initialView="timeGridWeek"
-          headerToolbar={{ 
-            start: 'prev,next today', 
-            center: 'title', 
-            end: 'dayGridMonth,timeGridWeek,timeGridDay' 
-          }}
-          height="800px"
-          events={filteredEvents}
-          editable={true}
-          selectable={true}
-          selectMirror={true}
-          dayMaxEvents={true}
-          weekNumbers={true}
-          nowIndicator={true}
-          locale="he"
-          direction="rtl"
-          firstDay={0}
-          slotMinTime={calendarSettings.slotMinTime}
-          slotMaxTime={calendarSettings.slotMaxTime}
-          allDaySlot={false}
-          slotLabelFormat={{ hour: '2-digit', minute: '2-digit', hour12: false }}
-          buttonText={{ today: 'היום', month: 'חודש', week: 'שבוע', day: 'יום' }}
-          select={handleDateSelect}
-          eventClick={handleEventClick}
-          eventDrop={handleEventDrop}
-          eventResize={handleEventResize}
-          eventContent={renderEventContent}
-          unselectAuto={false}
-        />
-      </div>
+      {activeTab === 'calendar' && (
+        <div className="calendar-view">
+          {/* Calendar Header */}
+          <div className="calendar-header">
+            <div className="header-buttons">
+              <button 
+                className="theme-toggle" 
+                onClick={handleToggleDarkMode} 
+                title="החלף מצב תצוגה"
+              >
+                {effectiveDarkMode ? '🌞' : '🌙'}
+              </button>
+              <button 
+                className="settings-button" 
+                onClick={() => setIsSettingsOpen(true)} 
+                title="הגדרות"
+              >
+                ⚙️ הגדרות
+              </button>
+              <select
+                className="trainer-filter"
+                value={selectedTrainerFilter}
+                onChange={(e) => setSelectedTrainerFilter(e.target.value)}
+                title="סנן לפי מאמן"
+              >
+                <option value="">כל המאמנים</option>
+                {trainers.map(trainer => (
+                  <option key={trainer.id} value={trainer.id}>
+                    {trainer.name}
+                  </option>
+                ))}
+              </select>
+              <button 
+                className="export-button" 
+                onClick={exportToICS} 
+                title="ייצא לוח שנה"
+              >
+                ⬇️ ייצא ל-ICS
+              </button>
+            </div>
+          </div>
+          
+          {/* Calendar Wrapper */}
+          <div className="calendar-wrapper">
+            <FullCalendar
+              timeZone="UTC"
+              ref={calendarRef}
+              plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, rrulePlugin]}
+              initialView="timeGridWeek"
+              headerToolbar={{ 
+                start: 'prev,next today', 
+                center: 'title', 
+                end: 'dayGridMonth,timeGridWeek,timeGridDay' 
+              }}
+              height="100%"
+              events={filteredEvents}
+              editable={true}
+              selectable={true}
+              selectMirror={true}
+              dayMaxEvents={true}
+              weekNumbers={true}
+              nowIndicator={true}
+              locale="he"
+              direction="rtl"
+              firstDay={0}
+              slotMinTime={calendarSettings.slotMinTime}
+              slotMaxTime={calendarSettings.slotMaxTime}
+              allDaySlot={true}
+              allDayText="כל היום"
+              slotLabelFormat={{ hour: '2-digit', minute: '2-digit', hour12: false }}
+              buttonText={{ today: 'היום', month: 'חודש', week: 'שבוע', day: 'יום' }}
+              select={handleDateSelect}
+              eventClick={handleEventClick}
+              eventDrop={handleEventDrop}
+              eventResize={handleEventResize}
+              eventContent={renderEventContent}
+              unselectAuto={false}
+            />
+          </div>
+        </div>
+      )}
+      
+      {/* Todo View */}
+      {activeTab === 'todo' && (
+        <div className="todo-view">
+          <TodoComponent isDarkMode={effectiveDarkMode} />
+        </div>
+      )}
       
       {/* Event Modal */}
       {isModalOpen && (
