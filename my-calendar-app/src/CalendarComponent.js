@@ -603,7 +603,8 @@ const CalendarComponent = ({ isDarkMode, setIsDarkMode }) => {
         extendedProps: {
           ...originalEvent.extendedProps,
           isAllDay: true
-        }
+        },
+        backgroundColor: event.backgroundColor
       };
       
       // If there's a recurring rule, update it
@@ -639,6 +640,7 @@ const CalendarComponent = ({ isDarkMode, setIsDarkMode }) => {
       end: new Date((new Date(originalEvent.end)).getTime() + timeShift).toISOString(), // Keep the modified end time
       extendedProps: event.extendedProps,
       allDay: event.allDay,
+      backgroundColor: event.backgroundColor,
       rrule: originalEvent.rrule
         ? {
             ...originalEvent.rrule,
