@@ -497,6 +497,7 @@ const CalendarComponent = () => {
 
   // Validate an event for conflicts
   const validateEvent = (updatedEvent) => {
+    console.log("validateEvent");
     const warnings = [];
     const conflictingEvents = [];
     const start = new Date(updatedEvent.start);

@@ -548,6 +548,7 @@ const CalendarComponent = ({ isDarkMode, setIsDarkMode }) => {
 
   // Validate an event for conflicts
   const validateEvent = (updatedEvent) => {
+    console.log("validateEvent2")
     const warnings = [];
     const conflictingEvents = [];
     
