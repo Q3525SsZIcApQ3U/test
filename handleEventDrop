@@ -1,0 +1,179 @@
+const handleEventDrop = useCallback((dropInfo) => {
+    console.log("in handleEventDrop");
+    // Clear any previously highlighted events
+    clearHighlightedEvents();
+    
+    const event = dropInfo.event; // Drop position
+    const oldEvent = dropInfo.oldEvent; // First event
+    const originalEvent = events.find(ev => ev.id === event.id); // Original event
+    
+    // Calculate the time shift (difference between the modified event and the original recurrence start)
+    const originalStart = new Date(originalEvent.start);
+    const modifiedStart = new Date(event.startStr);
+    const oldStart = new Date(oldEvent.startStr);
+    const timeShift = modifiedStart.getTime() - oldStart.getTime();
+  
+    console.log("timeShift");
+    console.log(timeShift);
+  
+    // Create the updated event with a shifted start time
+    let updatedEvent = null;
+    let nextWeekRecuringEvent= null;
+    const specificEventId = `${event.id}_specific`;
+    const nextWeekEventId = `${event.id}_next_week`;
+    let specificEvent;
+    // Calculate the duration for recurring events (if applicable)
+    if (originalEvent.rrule) 
+      {
+      if (window.confirm("Do you want to continue?")) // if only the speicf event
+      {
+        if (new Date(originalEvent.rrule.until).getTime()>new Date(oldEvent.end+7 * 24 * 60 * 60 * 1000).getTime())
+          {
+            console.log("im not the last");
+            const startTime = new Date((new Date(oldEvent.start)).getTime() + 7 * 24 * 60 * 60 * 1000);
+const endTime = new Date((new Date(oldEvent.end)).getTime() + 7 * 24 * 60 * 60 * 1000);
+            const duration = endTime.getTime() - startTime.getTime();
+            nextWeekRecuringEvent = {
+              id: nextWeekEventId,
+              title: event.title,
+              start: new Date((new Date(oldEvent.start)).getTime()+7 * 24 * 60 * 60 * 1000).toISOString(), // Shifted start time
+              end: new Date((new Date(oldEvent.end)).getTime() +7 * 24 * 60 * 60 * 1000).toISOString(), // Keep the modified end time
+              extendedProps: event.extendedProps,
+              backgroundColor: event.backgroundColor,
+              duration: duration, // Use calculated duration
+              rrule: {
+                    ...originalEvent.rrule,
+                    dtstart: new Date((new Date(oldEvent.start)).getTime()+7 * 24 * 60 * 60 * 1000).toISOString(), // Shifted recurrence start
+                    until: new Date(new Date(originalEvent.rrule.until).getTime()).toISOString()
+                  }
+            };
+            
+            saveEventToDB(nextWeekRecuringEvent);
+            setEvents(pre => {return [...pre, nextWeekRecuringEvent]})
+          }
+          console.log(new Date(originalEvent.rrule.dtstart));
+          console.log(new Date(oldEvent.start));
+          console.log(new Date(originalEvent.rrule.dtstart)==new Date(oldEvent.start));
+          if (new Date(originalEvent.rrule.dtstart).getTime()==new Date(oldEvent.start).getTime())
+          {
+            console.log("im the first");
+            updatedEvent = {
+              id: event.id,
+              title: event.title,
+              start: new Date((new Date(originalEvent.start)).getTime() + timeShift ).toISOString(), // Shifted start time
+              end: new Date((new Date(originalEvent.end)).getTime()+timeShift  ).toISOString(), // Keep the modified end time
+              extendedProps: event.extendedProps,
+              backgroundColor: event.backgroundColor,
+            };
+          }
+          else
+          { 
+            
+            updatedEvent = {
+              id: event.id,
+              title: event.title,
+              start: new Date((new Date(originalEvent.start)).getTime()).toISOString(), // Shifted start time
+              end: new Date((new Date(originalEvent.end)).getTime() ).toISOString(), // Keep the modified end time
+              extendedProps: event.extendedProps,
+              backgroundColor: event.backgroundColor,
+              rrule: {
+                    ...originalEvent.rrule,
+                    dtstart: new Date(originalStart.getTime() ).toISOString(), // Shifted recurrence start
+                    until: new Date(new Date(oldEvent.start).getTime() - 7 * 24 * 60 * 60 * 1000).toISOString()
+                  }
+            };
+            specificEvent = {
+              id: specificEventId,
+              title: event.title,
+              start: new Date((new Date(event.start)).getTime()).toISOString(), // Shifted start time
+              end: new Date((new Date(event.end)).getTime() ).toISOString(), // Keep the modified end time
+              extendedProps: event.extendedProps,
+              backgroundColor: event.backgroundColor,
+            };
+            saveEventToDB(specificEvent);
+            setEvents(pre => {return [...pre, specificEvent]})
+          }
+           
+          const modifiedEnd = new Date(event.endStr);
+          updatedEvent.duration = {
+            hours: Math.floor((modifiedEnd - new Date(event.startStr)) / (1000 * 60 * 60)),
+            minutes: Math.round(((modifiedEnd - new Date(event.startStr)) % (1000 * 60 * 60)) / (1000 * 60))
+          };
+
+      }
+      else
+      {
+        updatedEvent = {
+          id: event.id,
+          title: event.title,
+          start: new Date((new Date(originalEvent.start)).getTime() + timeShift).toISOString(), // Shifted start time
+          end: new Date((new Date(originalEvent.end)).getTime() + timeShift).toISOString(), // Keep the modified end time
+          extendedProps: event.extendedProps,
+          backgroundColor: event.backgroundColor,
+          rrule: 
+            {
+                ...originalEvent.rrule,
+                dtstart: new Date(originalStart.getTime() + timeShift).toISOString(), // Shifted recurrence start
+                until: new Date(new Date(originalEvent.rrule.until).getTime() + timeShift).toISOString()
+              }
+        };
+      
+      }
+      
+    }
+    else{
+       updatedEvent = {
+        id: event.id,
+        title: event.title,
+        start: new Date((new Date(originalEvent.start)).getTime() + timeShift).toISOString(), // Shifted start time
+        end: new Date((new Date(originalEvent.end)).getTime() + timeShift).toISOString(), // Keep the modified end time
+        extendedProps: event.extendedProps,
+        backgroundColor: event.backgroundColor,
+      };
+    }
+  
+    console.log("Updated event with duration:");
+    console.log(updatedEvent);
+  
+    // Highlight conflicting events
+    const conflictingEvents = highlightConflictingEvents(updatedEvent);
+    
+    // Validate dropped event
+    const { warnings } = specificEvent? validateEvent(specificEvent):validateEvent(updatedEvent);
+    
+    if (warnings.length > 0) {
+      toast.info(
+        <WarningToastContent
+          warnings={warnings}
+          conflictingEvents={conflictingEvents}
+          onProceed={() => {
+            toast.dismiss();
+            clearHighlightedEvents();
+            saveEventToDB(updatedEvent);
+            setEvents(prevEvents => {
+              const updatedEvents = prevEvents.map(ev => ev.id === updatedEvent.id ? updatedEvent : ev);
+              localStorage.setItem('events', JSON.stringify(updatedEvents));
+              return updatedEvents;
+            });
+          }}
+          onCancel={() => {
+            toast.dismiss();
+            clearHighlightedEvents();
+            dropInfo.revert(); // Revert drop if cancelled
+          }}
+        />,
+        { autoClose: false }
+      );
+      return;
+    }
+    
+    // If no warnings, update event normally
+    clearHighlightedEvents();
+    saveEventToDB(updatedEvent);
+    setEvents(prevEvents => {
+      const updatedEvents = prevEvents.map(ev => ev.id === updatedEvent.id ? updatedEvent : ev);
+      localStorage.setItem('events', JSON.stringify(updatedEvents));
+      return updatedEvents;
+    });
+  }, [events]);
+  
