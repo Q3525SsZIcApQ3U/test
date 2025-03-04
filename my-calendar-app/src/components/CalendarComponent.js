@@ -835,7 +835,7 @@ extendedProps: {
           dtstart: event.startStr
         };
       }
-      
+      updatedEvent.backgroundColor = event.backgroundColor;
       // Save directly without conflict checking
       saveEventToDB(updatedEvent);
       setEvents(prevEvents => {
@@ -861,6 +861,7 @@ extendedProps: {
       end: new Date((new Date(originalEvent.end)).getTime() + timeShift).toISOString(), // Keep the modified end time
       extendedProps: event.extendedProps,
       allDay: event.allDay,
+      backgroundColor: event.backgroundColor,
       rrule: originalEvent.rrule
         ? {
             ...originalEvent.rrule,
@@ -969,6 +970,7 @@ extendedProps: {
       start: originalEvent.start, // Keep original start time
       end: new Date(originalEnd.getTime() + timeShift).toISOString(), // Shifted end time
       extendedProps: originalEvent.extendedProps,
+      backgroundColor: event.backgroundColor,
       allDay: event.allDay,
       rrule: originalEvent.rrule
         ? {
