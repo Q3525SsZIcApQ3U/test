@@ -89,6 +89,7 @@ const CalendarComponent = () => {
   const [trainers, setTrainers] = useState([]);
   const [selectedTrainerFilter, setSelectedTrainerFilter] = useState('');
   const [events, setEvents] = useState([]);
+  const [eventFonts, setEventFonts] = useState({});
   const [calendarSettings, setCalendarSettings] = useState({
     slotMinTime: "07:00:00z",
     slotMaxTime: "22:00:00z"
@@ -288,6 +289,41 @@ const CalendarComponent = () => {
     fetchEvents();
 
   }, [courses]);
+
+
+    // Fetch events fonts
+    useEffect(() => {
+      const fetchEventFonts = async () => {
+        try {
+          const response = await axios.get(`${API_BASE_URL}/event-fonts`); // TODO - change to local file
+          
+          setEventFonts(response.data);
+          localStorage.setItem('event-fonts', JSON.stringify(response.data));
+        } catch (error) {
+          console.error("Error fetching events:", error);
+          
+          // Try to load from localStorage if loading from file fails
+          const savedEventFonts = localStorage.getItem('event-fonts');
+          if (savedEventFonts) {
+            setEventFonts(JSON.parse(savedEventFonts));
+          } else {
+            // Use default event if nothing available
+            const defaultFonts = {
+              nameFont: 20,
+              detailsFont: 17
+            };
+            
+            setEventFonts(defaultFonts);
+            localStorage.setItem('event-fonts', JSON.stringify(defaultFonts));
+          }
+        }
+      };
+  
+      fetchEventFonts();
+  
+    }, []);
+  
+
 
   // Update events when courses change to reflect any new course settings (such as colors)
   useEffect(() => {
@@ -1002,22 +1038,21 @@ const handleEventResize = useCallback((resizeInfo) => {
     // Find course to get tags
     const course = event.extendedProps?.courseId ? 
       courses.find(c => c.id === event.extendedProps.courseId) : null;
-    
     const fullTitle = event.title;
     const displayTitle = fullTitle.length > 15 ? fullTitle.substring(0,15) + '...' : fullTitle;
     
     return (
       <div className={`event-content ${isException ? 'exception' : ''} ${isCancelled ? 'cancelled' : ''}`}
-        style={{ fontSize: '0.8em' }}
+        style={{ fontSize: '2.8em' }}
         title={fullTitle}
       >
-        <div className="event-title">
+        <div className="event-title" style={{fontSize: eventFonts.nameFont}}>
           {isException && !isCancelled && <span className="exception-indicator">⚡</span>}
           {isCancelled && <span className="cancelled-indicator">🚫</span>}
-          {displayTitle}
+          {displayTitle + "-" + event.extendedProps.eventTypeId}
         </div>
         
-        {trainer && <div className="event-trainer">מאמן: {trainer.name}</div>}
+        {trainer && <div className="event-trainer" style={{fontSize: eventFonts.detailsFont}}>מאמן: {trainer.name}</div>}
         
         {course && course.tags && course.tags.length > 0 && (
           <div className="event-tags">
@@ -1028,7 +1063,7 @@ const handleEventResize = useCallback((resizeInfo) => {
         )}
         
         {event.extendedProps?.location && !isCancelled && (
-          <div className="event-location">📍 {event.extendedProps.location}</div>
+          <div className="event-location" style={{fontSize: eventFonts.detailsFont}}>📍 {event.extendedProps.location}</div>
         )}
       </div>
     );
