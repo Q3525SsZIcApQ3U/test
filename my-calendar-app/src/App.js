@@ -32,9 +32,6 @@ function App() {
     <div className={`app-container ${isDarkMode ? 'dark' : ''}`}>
         <div className="main-container">
           {/* Button to toggle the sidebar */}
-          <button className="toggle-sidebar-button" onClick={toggleSidebar}>
-            {isSidebarOpen ? '🗙' : '✎'}
-          </button>
           {/* Layout container */}
           <div className="content-wrapper" style={{ display: 'flex' }}>
             <ProSidebarProvider>
@@ -54,6 +51,20 @@ function App() {
                 </div>
               </Sidebar>
             </ProSidebarProvider>
+            <button
+  className="toggle-sidebar-button"
+  onClick={toggleSidebar}
+  style={{
+    backgroundColor: 'transparent',
+    border: 'none',
+    padding: 0,
+    fontSize: '24px', // adjust as needed
+    cursor: 'pointer'
+  }}
+>
+  {isSidebarOpen ? '⬅️' : '➡️'}
+</button>
+
             <div
               className="calendar-container"
               style={{
@@ -69,7 +80,6 @@ function App() {
             </div>
           </div>
         </div>
-      )}
     </div>
   );
 }

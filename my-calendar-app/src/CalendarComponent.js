@@ -1088,7 +1088,7 @@ const handleEventResize = useCallback((resizeInfo) => {
             center: 'title', 
             end: 'dayGridMonth,timeGridWeek,timeGridDay' 
           }}
-          height="800px"
+          height="calc(90vh - 16px)" // Padding for the calendar-header (more info in settings.css).
           events={filteredEvents}
           editable={true}
           selectable={true}
