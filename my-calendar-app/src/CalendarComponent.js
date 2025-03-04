@@ -90,6 +90,9 @@ const CalendarComponent = () => {
   const [selectedTrainerFilter, setSelectedTrainerFilter] = useState('');
   const [events, setEvents] = useState([]);
   const [eventFonts, setEventFonts] = useState({});
+  const [eventTypes, setEventTypes] = useState([]);
+  const [availableTags, setAvailableTags] = useState([]);
+
   const [calendarSettings, setCalendarSettings] = useState({
     slotMinTime: "07:00:00z",
     slotMaxTime: "22:00:00z"
@@ -300,7 +303,7 @@ const CalendarComponent = () => {
           setEventFonts(response.data);
           localStorage.setItem('event-fonts', JSON.stringify(response.data));
         } catch (error) {
-          console.error("Error fetching events:", error);
+          console.error("Error fetching events fonts:", error);
           
           // Try to load from localStorage if loading from file fails
           const savedEventFonts = localStorage.getItem('event-fonts');
@@ -323,6 +326,47 @@ const CalendarComponent = () => {
   
     }, []);
   
+
+    // Fetch tags and event types when component mounts
+    useEffect(() => {
+          // Get event types from localStorage, or use default
+      const getEventTypes = () => {
+        try {
+          const savedTypes = localStorage.getItem('eventTypes');
+          if (savedTypes) {
+            return JSON.parse(savedTypes);
+          }
+        } catch (error) {
+          console.error("Error loading event types from localStorage:", error);
+        }
+
+        // Default event types if localStorage fails
+        return [
+          { id: 'regular', name: 'שיעור רגיל', color: '#3B82F6' },
+          { id: 'special', name: 'שיעור מיוחד', color: '#F59E0B' },
+          { id: 'exam', name: 'בחינה', color: '#DC2626' }
+        ];
+      };
+
+      const fetchData = () => {
+        try {
+          // Load tags
+          const savedTags = localStorage.getItem('courseTags');
+          if (savedTags) {
+            setAvailableTags(JSON.parse(savedTags));
+          }
+          
+          // Load event types
+          setEventTypes(getEventTypes());
+        } catch (error) {
+          console.error("Error loading data from localStorage:", error);
+          setAvailableTags([]);
+          setEventTypes(getEventTypes());
+        }
+      };
+      
+      fetchData();
+    }, []);
 
 
   // Update events when courses change to reflect any new course settings (such as colors)
@@ -540,12 +584,8 @@ const CalendarComponent = () => {
         duration: event.duration ? JSON.stringify(event.duration) : null,
         backgroundColor: event.backgroundColor
       };
-      
-      // Check if event is new or existing
-      const isNewEvent = !events.some(e => e.id === event.id);
-      
       // Send API request
-      if (isNewEvent) {
+      if (isEventCreation) {
         await axios.post(`${API_BASE_URL}/events`, eventData);
       } else {
         await axios.put(`${API_BASE_URL}/events/${event.id}`, eventData);
@@ -674,11 +714,6 @@ const CalendarComponent = () => {
     
     // If no warnings, update event normally
     clearHighlightedEvents();
-    console.log("drag and drop 1:");
-    console.log(event);
-    console.log("drag and drop 2:");
-    console.log(updatedEvent);
-    
     saveEventToDB(updatedEvent);
     setEvents(prevEvents => {
       const updatedEvents = prevEvents.map(ev => ev.id === updatedEvent.id ? updatedEvent : ev);
@@ -711,6 +746,7 @@ const handleEventResize = useCallback((resizeInfo) => {
     start: originalEvent.start, // Keep original start time
     end: new Date(originalEnd.getTime() + timeShift).toISOString(), // Shifted end time
     extendedProps: originalEvent.extendedProps,
+    backgroundColor: originalEvent.backgroundColor,
     rrule: originalEvent.rrule
       ? {
           ...originalEvent.rrule,
@@ -775,10 +811,10 @@ const handleEventResize = useCallback((resizeInfo) => {
   const handleUpdateEvent = useCallback((updatedEvent) => {
     // Clear any previously highlighted events
     clearHighlightedEvents();
-    
+
     // Save to database
     saveEventToDB(updatedEvent);
-    
+
     // Update local state
     setEvents(prevEvents => {
       let newEvents;
@@ -832,7 +868,7 @@ const handleEventResize = useCallback((resizeInfo) => {
     // Close modal
     setIsEventCreation(false);
     setIsModalOpen(false);
-  }, []);
+  }, [events]);
 
   // Handle delete event
   const handleDeleteEvent = useCallback(async (eventId) => {
@@ -1041,6 +1077,8 @@ const handleEventResize = useCallback((resizeInfo) => {
     const fullTitle = event.title;
     const displayTitle = fullTitle.length > 15 ? fullTitle.substring(0,15) + '...' : fullTitle;
     
+    const eventType = eventTypes.find(t => t.id === event.extendedProps.eventTypeId);
+
     return (
       <div className={`event-content ${isException ? 'exception' : ''} ${isCancelled ? 'cancelled' : ''}`}
         style={{ fontSize: '2.8em' }}
@@ -1049,7 +1087,7 @@ const handleEventResize = useCallback((resizeInfo) => {
         <div className="event-title" style={{fontSize: eventFonts.nameFont}}>
           {isException && !isCancelled && <span className="exception-indicator">⚡</span>}
           {isCancelled && <span className="cancelled-indicator">🚫</span>}
-          {displayTitle + "-" + event.extendedProps.eventTypeId}
+          {eventType? displayTitle + " - " + eventType.name : displayTitle}
         </div>
         
         {trainer && <div className="event-trainer" style={{fontSize: eventFonts.detailsFont}}>מאמן: {trainer.name}</div>}
@@ -1166,6 +1204,8 @@ const handleEventResize = useCallback((resizeInfo) => {
             setIsModalOpen(false);
           }}
           event={selectedEvent}
+          eventTypes={eventTypes}
+          availableTags={availableTags}
           courses={courses}
           trainers={trainers}
           onUpdate={handleUpdateEvent}

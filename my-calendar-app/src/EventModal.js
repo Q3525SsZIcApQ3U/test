@@ -61,25 +61,6 @@ const getColorPalette = () => {
   ];
 };
 
-// Get event types from localStorage, or use default
-const getEventTypes = () => {
-  try {
-    const savedTypes = localStorage.getItem('eventTypes');
-    if (savedTypes) {
-      return JSON.parse(savedTypes);
-    }
-  } catch (error) {
-    console.error("Error loading event types from localStorage:", error);
-  }
-  
-  // Default event types if localStorage fails
-  return [
-    { id: 'regular', name: 'שיעור רגיל', color: '#3B82F6' },
-    { id: 'special', name: 'שיעור מיוחד', color: '#F59E0B' },
-    { id: 'exam', name: 'בחינה', color: '#DC2626' }
-  ];
-};
-
 /**
  * EventModal Component
  * 
@@ -89,6 +70,8 @@ const EventModal = ({
   isOpen,
   onClose,
   event,
+  eventTypes, 
+  availableTags,
   courses = [],
   trainers = [],
   onUpdate,
@@ -116,33 +99,6 @@ const EventModal = ({
   const [newCourseName, setNewCourseName] = useState('');
   const [selectedTag, setSelectedTag] = useState('');
   
-  // State for event types
-  const [eventTypes, setEventTypes] = useState([]);
-  
-  // Get all available tags
-  const [availableTags, setAvailableTags] = useState([]);
-  
-  // Fetch tags and event types when component mounts
-  useEffect(() => {
-    const fetchData = () => {
-      try {
-        // Load tags
-        const savedTags = localStorage.getItem('courseTags');
-        if (savedTags) {
-          setAvailableTags(JSON.parse(savedTags));
-        }
-        
-        // Load event types
-        setEventTypes(getEventTypes());
-      } catch (error) {
-        console.error("Error loading data from localStorage:", error);
-        setAvailableTags([]);
-        setEventTypes(getEventTypes());
-      }
-    };
-    
-    fetchData();
-  }, []);
   
   // Early return if modal is closed
   if (!isOpen) return null;
@@ -189,13 +145,13 @@ const EventModal = ({
    */
   const handleSubmit = (e) => {
     e.preventDefault();
-    
+
     // Get course info for title and color
     const course = courses.find(c => c.id === selectedCourseId);
     
     // Get event type
     const eventType = eventTypes.find(t => t.id === selectedEventType);
-    
+
     // Create updated event object
     const updatedEvent = {
       id: event.id,
@@ -222,7 +178,7 @@ const EventModal = ({
         until: recurrenceEndDate + 'T23:59:59Z',
         interval: 1
       };
-      
+
       // Calculate duration for recurring events
       const startDate = new Date(event.start);
       const endDate = new Date(event.end);
@@ -235,7 +191,7 @@ const EventModal = ({
 
     // Validate the event for conflicts and issues
     const { warnings, conflictingEvents } = validateEvent(updatedEvent);
-    
+
     // Show warnings if any found
     if (warnings.length > 0) {
       toast.info(
@@ -252,9 +208,9 @@ const EventModal = ({
         />,
         { autoClose: false }
       );
-      return;
+            return;
     }
-    
+
     // No warnings, proceed with update
     onUpdate(updatedEvent);
   };
