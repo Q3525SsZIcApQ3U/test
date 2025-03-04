@@ -268,8 +268,8 @@ const CalendarComponent = () => {
             backgroundColor: DEFAULT_COLOR_PALETTE[0].bg,
             rrule: {
               freq: 'weekly',
-              dtstart: '2025-02-24T10:00:00',
-              until: '2025-06-24T23:59:59',
+              dtstart: '2025-02-24T10:00:00z',
+              until: '2025-06-24T23:59:59z',
               interval: 1
             },
             duration: { hours: 1, minutes: 30 }
