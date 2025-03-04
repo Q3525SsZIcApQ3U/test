@@ -36,34 +36,3 @@
     transform: rotate(360deg);
   }
 }
-
-
-
-/* This is for the text editor open/close button */
-.toggle-sidebar-button {
-  background-color: #4CAF50; /* Green background */
-  border: none;
-  border-radius: 50%; /* Make it round */
-  color: white;
-  font-size: 24px; /* Larger icons */
-  width: 50px; /* Button width */
-  height: 50px; /* Button height */
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  transition: background-color 0.3s ease, transform 0.3s ease;
-  cursor: pointer; /* Pointer cursor on hover */
-}
-
-.toggle-sidebar-button:hover {
-  background-color: #45a049; /* Darker green on hover */
-  transform: scale(1.1); /* Slightly enlarge button on hover */
-}
-
-.toggle-sidebar-button:focus {
-  outline: none; /* Remove focus outline */
-}
-
-.toggle-sidebar-button:active {
-  transform: scale(0.95); /* Slight shrink effect when clicked */
-}

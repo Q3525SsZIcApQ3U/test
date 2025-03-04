@@ -1,0 +1,364 @@
+/* ICSImportExport.css */
+.ics-import-export {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.import-export-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+@media (max-width: 768px) {
+  .import-export-container {
+    grid-template-columns: 1fr;
+  }
+}
+
+.import-section, .export-section {
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  background-color: var(--bg-light);
+  transition: border-color var(--transition-normal), background-color var(--transition-normal);
+}
+
+.dark .import-section, .dark .export-section {
+  border-color: var(--border-dark);
+  background-color: var(--bg-dark-accent);
+}
+
+.import-section h4, .export-section h4 {
+  margin-top: 0;
+  margin-bottom: 12px;
+  color: var(--primary-color);
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.dark .import-section h4, .dark .export-section h4 {
+  color: var(--primary-light);
+  border-color: var(--border-dark);
+}
+
+.file-input-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+  margin: 20px 0;
+}
+
+.status-message {
+  padding: 10px 16px;
+  border-radius: var(--radius-md);
+  font-weight: 500;
+}
+
+.status-message.loading {
+  background-color: rgba(59, 130, 246, 0.1);
+  color: #1e40af;
+}
+status-message.loading {
+  background-color: rgba(59, 130, 246, 0.1);
+  color: #1e40af;
+}
+
+.dark .status-message.loading {
+  background-color: rgba(59, 130, 246, 0.2);
+  color: #93c5fd;
+}
+
+.status-message.success {
+  background-color: rgba(16, 185, 129, 0.1);
+  color: #065f46;
+}
+
+.dark .status-message.success {
+  background-color: rgba(16, 185, 129, 0.2);
+  color: #6ee7b7;
+}
+
+.status-message.error {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #b91c1c;
+}
+
+.dark .status-message.error {
+  background-color: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+}
+
+.import-stats {
+  margin-top: 8px;
+  font-size: 0.9em;
+}
+
+.import-tips {
+  margin-top: 16px;
+  padding: 12px;
+  background-color: rgba(250, 204, 21, 0.1);
+  border-radius: var(--radius-md);
+  border-left: 3px solid #f59e0b;
+}
+
+.dark .import-tips {
+  background-color: rgba(250, 204, 21, 0.05);
+}
+
+.import-tips h5 {
+  margin-top: 0;
+  margin-bottom: 8px;
+  color: #92400e;
+}
+
+.dark .import-tips h5 {
+  color: #fbbf24;
+}
+
+.import-tips ul {
+  margin: 0;
+  padding-right: 20px;
+  padding-left: 0;
+}
+
+.import-tips li {
+  margin-bottom: 4px;
+}
+
+.export-stats {
+  margin-top: 16px;
+  padding: 12px;
+  background-color: rgba(67, 97, 238, 0.05);
+  border-radius: var(--radius-md);
+  font-weight: 500;
+}
+
+.dark .export-stats {
+  background-color: rgba(67, 97, 238, 0.1);
+}
+
+/* Custom styling for context menu */
+.context-menu {
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-light);
+  border: 1px solid var(--border-light);
+  overflow: hidden;
+  background-color: var(--bg-light);
+  transition: all var(--transition-fast);
+  z-index: 1000;
+}
+
+.dark .context-menu {
+  box-shadow: var(--shadow-dark);
+  border-color: var(--border-dark);
+  background-color: var(--bg-dark);
+}
+
+.context-menu-item {
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.context-menu-item:hover {
+  background-color: var(--bg-light-accent) !important;
+}
+
+.dark .context-menu-item:hover {
+  background-color: var(--bg-dark-accent) !important;
+}
+
+.context-menu-item[data-type="delete"] {
+  color: var(--danger-color);
+}
+
+/* Modal adjustments for event modal */
+.modal-content.modern {
+  max-width: 600px;
+}
+
+/* Styles for tag chips in event modal */
+.tags-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 12px;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  background-color: var(--bg-light);
+  min-height: 60px;
+}
+
+.dark .tags-container {
+  border-color: var(--border-dark);
+  background-color: var(--bg-dark-accent);
+}
+
+/* Enhanced outline styling for focused elements in dark mode */
+.dark :focus-visible {
+  outline: 2px solid var(--primary-light);
+  outline-offset: 2px;
+}
+
+/* Update the modal background and size */
+.calendar-container.modern .modal-content.modern {
+  background: var(--bg-light);
+  max-width: 600px;
+  max-height: 85vh;
+}
+
+.dark .calendar-container.modern .modal-content.modern {
+  background: var(--bg-dark);
+}
+
+/* Enhance the calendar outlines in dark mode */
+.dark .fc-theme-standard .fc-scrollgrid,
+.dark .fc-theme-standard td,
+.dark .fc-theme-standard th,
+.dark .fc-theme-standard .fc-list {
+  border-color: var(--border-dark) !important;
+}
+
+.dark .fc-timegrid-slot-minor {
+  border-color: var(--border-dark) !important;
+}
+
+.dark .fc .fc-toolbar-title {
+  color: var(--text-light) !important;
+}
+
+/* Better todo item styling */
+.todo-item {
+  display: flex;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 1px solid var(--border-light);
+  transition: background-color var(--transition-fast), border-color var(--transition-normal);
+  background-color: var(--bg-light);
+}
+
+.todo-item:hover {
+  background-color: #f8fafc;
+}
+
+.dark .todo-item {
+  border-color: var(--border-dark);
+  background-color: var(--bg-dark);
+}
+
+.dark .todo-item:hover {
+  background-color: #1e293b;
+}
+
+.todo-checkbox {
+  width: 20px;
+  height: 20px;
+  margin-right: 16px;
+  accent-color: var(--primary-color);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.dark .todo-checkbox {
+  accent-color: var(--primary-light);
+}
+
+.todo-checkbox:hover {
+  transform: scale(1.1);
+}
+
+.todo-text {
+  flex: 1;
+  font-size: 16px;
+  color: var(--text-dark);
+  transition: color var(--transition-normal), text-decoration var(--transition-fast);
+}
+
+.dark .todo-text {
+  color: var(--text-light);
+}
+
+.todo-text.completed {
+  text-decoration: line-through;
+  color: #9ca3af;
+}
+
+.todo-delete {
+  background: none;
+  border: none;
+  color: var(--danger-color);
+  cursor: pointer;
+  font-size: 18px;
+  padding: 8px;
+  border-radius: var(--radius-sm);
+  margin-left: 8px;
+  opacity: 0.7;
+  transition: all var(--transition-fast);
+}
+
+.todo-delete:hover {
+  opacity: 1;
+  background-color: rgba(239, 68, 68, 0.1);
+}
+
+.dark .todo-delete:hover {
+  background-color: rgba(239, 68, 68, 0.2);
+}
+
+/* Enhanced add todo button */
+.add-todo-btn {
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  height: 48px;
+  padding: 0 20px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.add-todo-btn:hover {
+  background: var(--primary-dark);
+  transform: translateY(-1px);
+}
+
+.dark .add-todo-btn {
+  background: var(--primary-dark);
+}
+
+.dark .add-todo-btn:hover {
+  background: var(--primary-light);
+}
+
+/* Make sure events show tags properly */
+.event-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.event-tag {
+  background: rgba(67, 97, 238, 0.1);
+  color: var(--primary-color);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+}
+
+.dark .event-tag {
+  background: rgba(67, 97, 238, 0.2);
+  color: var(--primary-light);
+}

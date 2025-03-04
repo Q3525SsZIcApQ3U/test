@@ -15,7 +15,7 @@
   --bg-light-accent: #f3f4f6;
   --bg-dark-accent: #1e1e1e;
   --border-light: #e5e7eb;
-  --border-dark: #374151;
+  --border-dark: #ffffff;
   --shadow-light: 0 4px 12px rgba(0, 0, 0, 0.08);
   --shadow-dark: 0 4px 12px rgba(0, 0, 0, 0.3);
   --shadow-light-hover: 0 8px 24px rgba(0, 0, 0, 0.12);
@@ -237,11 +237,11 @@ body.dark-mode {
 }
 
 .dark .settings-button {
-  background: linear-gradient(135deg, var(--primary-dark), #3040a0);
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
 }
 
 .dark .settings-button:hover {
-  background: linear-gradient(135deg, #3040a0, var(--primary-dark));
+  background: linear-gradient(135deg, var(--primary-light), var(--primary-color));
 }
 
 /* Add a subtle ripple effect to buttons */
@@ -321,13 +321,13 @@ body.dark-mode {
 
 /* Todo button styling */
 .todo-button {
-  background: linear-gradient(135deg, var(--success-color), var(--success-dark));
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
   color: white;
   border: none;
 }
 
 .todo-button:hover {
-  background: linear-gradient(135deg, var(--success-dark), var(--success-color));
+  background: linear-gradient(135deg, var(--primary-dark), var(--peimary-color));
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
 }
@@ -654,13 +654,148 @@ textarea.form-input {
   color: var(--text-light) !important;
 }
 
-/* Enhanced today cell styling */
-.fc .fc-day-today {
-  background: rgba(67, 97, 238, 0.05) !important;
+/* Fix for the "more" link in FullCalendar */
+.fc-daygrid-more-link {
+  color: var(--primary-color);
+  font-weight: 500;
+  cursor: pointer;
+  padding: 2px 4px;
+  margin: 2px;
+  display: block;
+  text-align: center;
+  border-radius: var(--radius-sm);
+  transition: background-color var(--transition-fast), color var(--transition-fast);
 }
 
-.dark .fc .fc-day-today {
-  background: rgba(67, 97, 238, 0.1) !important;
+.fc-daygrid-more-link:hover {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.dark .fc-daygrid-more-link {
+  color: var(--primary-light);
+}
+
+.dark .fc-daygrid-more-link:hover {
+  background-color: var(--primary-light);
+  color: var(--bg-dark);
+}
+
+fc-popover-header {
+  background-color: var(--primary-color) !important;
+  opacity: 0.95;
+  color: white !important;
+  padding: 10px 14px !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  border-bottom: 1px solid var(--primary-color) !important;
+  direction: rtl !important;
+}
+
+.dark .fc-popover-header {
+  background-color: var(--primary-dark) !important;
+}
+
+/* Fix the date in the header */
+.fc-popover-title {
+  font-weight: 600 !important;
+  font-size: 1rem !important;
+  margin: 0 !important;
+  text-align: right !important;
+  direction: rtl !important;
+  unicode-bidi: embed !important;
+}
+
+/* Style the close button */
+.fc-popover-close {
+  background: none !important;
+  border: none !important;
+  color: white !important;
+  cursor: pointer !important;
+  font-size: 1.2rem !important;
+  opacity: 0.8 !important;
+  transition: opacity var(--transition-fast) !important;
+  padding: 4px 8px !important;
+  border-radius: var(--radius-sm) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.fc-popover-close:hover {
+  opacity: 1 !important;
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Make sure the entire popover follows theme */
+.fc-popover {
+  background-color: var(--bg-light) !important;
+  border: 1px solid var(--border-light) !important;
+  border-radius: var(--radius-md) !important;
+  box-shadow: var(--shadow-light-hover) !important;
+  z-index: 1000 !important;
+}
+
+.dark .fc-popover {
+  background-color: var(--bg-dark) !important;
+  border-color: var(--border-dark) !important;
+  box-shadow: var(--shadow-dark-hover) !important;
+}
+
+/* Fix the popover body */
+.fc-popover-body {
+  opacity: 0.95;
+  padding: 12px !important;
+  max-height: 300px !important;
+  overflow-y: auto !important;
+  direction: rtl !important;
+  background-color: var(--bg-light) !important;
+}
+
+.dark .fc-popover-body {
+  opacity: 0.95;
+  padding: 12px !important;
+  max-height: 300px !important;
+  overflow-y: auto !important;
+  direction: rtl !important;
+  background-color: var(--bg-dark) !important;
+}
+
+
+/* Style the events in the popover */
+.fc-popover-body .fc-daygrid-event {
+  margin: 6px 0 !important;
+  border-radius: var(--radius-sm) !important;
+  padding: 6px 10px !important;
+  box-shadow: var(--shadow-light) !important;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast) !important;
+}
+
+.fc-popover-body .fc-daygrid-event:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: var(--shadow-light-hover) !important;
+}
+
+.dark .fc-popover-body .fc-daygrid-event {
+  box-shadow: var(--shadow-dark) !important;
+}
+
+.dark .fc-popover-body .fc-daygrid-event:hover {
+  box-shadow: var(--shadow-dark-hover) !important;
+}
+
+/* Make sure the event content is visible */
+.fc-popover-body .fc-event-title,
+.fc-popover-body .fc-event-time {
+  color: white !important;
+  font-weight: 500 !important;
+}
+
+/* Fix the Hebrew date in popover header */
+.fc-popover-header .fc-popover-title {
+  direction: rtl !important;
+  unicode-bidi: embed !important;
 }
 
 /* Time slot hover effect */
@@ -707,7 +842,7 @@ textarea.form-input {
   display: block;
   height: 3px;
   width: 60px;
-  background: linear-gradient(to right, var(--success-color), transparent);
+  background: linear-gradient(to right, var(--primary-color), transparent);
   margin-top: 8px;
 }
 
@@ -716,7 +851,7 @@ textarea.form-input {
 }
 
 .dark .todo-title::after {
-  background: linear-gradient(to right, var(--success-dark), transparent);
+  background: linear-gradient(to right, var(--primary-dark), transparent);
 }
 
 .todo-input-container {
@@ -765,7 +900,7 @@ textarea.form-input {
 .add-todo-btn {
   height: 48px;
   padding: 0 20px;
-  background: linear-gradient(135deg, var(--success-color), var(--success-dark));
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
   color: white;
   border: none;
   border-radius: 0 var(--radius-md) var(--radius-md) 0;
@@ -775,7 +910,7 @@ textarea.form-input {
 }
 
 .add-todo-btn:hover {
-  background: linear-gradient(135deg, var(--success-dark), var(--success-color));
+  background: linear-gradient(135deg, var(--primsry-dark), var(--primary-color));
 }
 
 .todo-list {
@@ -822,7 +957,7 @@ textarea.form-input {
   width: 20px;
   height: 20px;
   margin-right: 16px;
-  accent-color: var(--success-color);
+  accent-color: var(--primary-color);
   cursor: pointer;
   transition: all var(--transition-fast);
 }
@@ -1677,4 +1812,476 @@ border-bottom: 1px solid rgba(185, 28, 28, 0.2);
 
 .dark .fc-timegrid-allday {
   background-color: rgba(255, 255, 255, 0.03);
+}
+
+.todo-container {
+  height: 100%;
+  padding: 0 24px;
+  direction: rtl;
+}
+
+.todo-title {
+  font-size: 1.75rem;
+  font-weight: 600;
+  margin-bottom: 24px;
+  color: var(--text-dark);
+  position: relative;
+}
+
+.todo-title::after {
+  content: '';
+  display: block;
+  height: 3px;
+  width: 60px;
+  background: linear-gradient(to right, var(--primary-color), transparent);
+  margin-top: 8px;
+}
+
+.dark .todo-title {
+  color: var(--text-light);
+}
+
+.dark .todo-title::after {
+  background: linear-gradient(to right, var(--primary-dark), transparent);
+}
+
+.todo-input-container {
+  display: flex;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow-light);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  transition: box-shadow var(--transition-fast);
+}
+
+.todo-input-container:focus-within {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.dark .todo-input-container {
+  box-shadow: var(--shadow-dark);
+}
+
+.dark .todo-input-container:focus-within {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.todo-input {
+  flex: 1;
+  padding: 0 16px;
+  height: 48px;
+  border: 1px solid var(--border-light);
+  border-right: none;
+  border-radius: var(--radius-md) 0 0 var(--radius-md);
+  font-size: 14px;
+  background-color: var(--bg-light);
+  color: var(--text-dark);
+}
+
+.todo-input:focus {
+  outline: none;
+}
+
+.dark .todo-input {
+  background-color: var(--bg-dark-accent);
+  border-color: var(--border-dark);
+  color: var(--text-light);
+}
+
+.add-todo-btn {
+  height: 48px;
+  padding: 0 20px;
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+  color: white;
+  border: none;
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.add-todo-btn:hover {
+  background: linear-gradient(135deg, var(--primary-dark), var(--primary-color));
+}
+
+.todo-list {
+  flex: 1;
+  overflow-y: auto;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  background-color: var(--bg-light);
+  box-shadow: var(--shadow-light);
+  transition: border-color var(--transition-normal), background-color var(--transition-normal), box-shadow var(--transition-normal);
+}
+
+.dark .todo-list {
+  border-color: var(--border-dark);
+  background-color: var(--bg-dark-accent);
+  box-shadow: var(--shadow-dark);
+}
+
+.todo-item {
+  display: flex;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 1px solid var(--border-light);
+  transition: background-color var(--transition-fast), border-color var(--transition-normal);
+}
+
+.todo-item:hover {
+  background-color: #f8fafc;
+}
+
+.dark .todo-item {
+  border-color: var(--border-dark);
+}
+
+.dark .todo-item:hover {
+  background-color: #1e293b;
+}
+
+.todo-item:last-child {
+  border-bottom: none;
+}
+
+.todo-checkbox {
+  width: 20px;
+  height: 20px;
+  margin-right: 16px;
+  accent-color: var(--primary-color);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.todo-checkbox:hover {
+  transform: scale(1.1);
+}
+
+.todo-text {
+  flex: 1;
+  font-size: 16px;
+  color: var(--text-dark);
+  transition: color var(--transition-normal), text-decoration var(--transition-fast);
+}
+
+.dark .todo-text {
+  color: var(--text-light);
+}
+
+.todo-text.completed {
+  text-decoration: line-through;
+  color: #9ca3af;
+}
+
+.todo-delete {
+  background: none;
+  border: none;
+  color: #ef4444;
+  cursor: pointer;
+  font-size: 18px;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  opacity: 0.6;
+  transition: all var(--transition-fast);
+}
+
+.todo-delete:hover {
+  opacity: 1;
+  color: #dc2626;
+  background-color: rgba(239, 68, 68, 0.1);
+}
+
+.dark .todo-delete:hover {
+  background-color: rgba(239, 68, 68, 0.2);
+}
+
+.empty-todos {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  color: #6b7280;
+  transition: color var(--transition-normal);
+}
+
+.dark .empty-todos {
+  color: #9ca3af;
+}
+
+.empty-todos::before {
+  content: '📝';
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.todo-footer {
+  text-align: center;
+  padding: 16px;
+  background-color: var(--bg-light-accent);
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  transition: background-color var(--transition-normal);
+}
+
+.dark .todo-footer {
+  background-color: var(--bg-dark-accent);
+  color: var(--text-light);
+}
+
+.todo-filters {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.filter-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  border: 1px solid var(--border-light);
+  background-color: var(--bg-light);
+  color: #374151;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-size: 0.9em;
+  gap: 5px;
+  box-shadow: var(--shadow-light);
+}
+
+.filter-btn:hover {
+  background-color: #f8fafc;
+  border-color: #9ca3af;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-light-hover);
+}
+
+.dark .filter-btn {
+  background-color: var(--bg-dark-accent);
+  border-color: var(--border-dark);
+  color: var(--text-light);
+  box-shadow: var(--shadow-dark);
+}
+
+.dark .filter-btn:hover {
+  background-color: #2a2a2a;
+  border-color: #475569;
+  box-shadow: var(--shadow-dark-hover);
+}
+
+.filter-btn.active {
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+  color: white;
+  border-color: var(--primary-dark);
+}
+
+.dark .filter-btn.active {
+  background: linear-gradient(135deg, var(--primary-dark), var(--primary-color));
+  color: white;
+  border-color: var(--primary-light);
+}
+
+.filter-count {
+  background-color: rgba(255,255,255,0.2);
+  color: white;
+  border-radius: 9999px;
+  padding: 0 6px;
+  margin-right: 5px;
+  font-size: 0.8em;
+}
+
+.filter-btn:not(.active) .filter-count {
+  background-color: #e5e7eb;
+  color: #374151;
+}
+
+.dark .filter-btn:not(.active) .filter-count {
+  background-color: #4b5563;
+  color: #e5e7eb;
+}
+
+.clear-completed-btn {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+  border: none;
+}
+
+.dark .clear-completed-btn {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+}
+
+.clear-completed-btn:hover {
+  background: linear-gradient(135deg, #dc2626, #ef4444);
+  transform: translateY(-1px);
+}
+
+
+
+.fc .fc-day-today {
+  background-color: rgba(67, 97, 238, 0.1) !important; /* 10% opacity of primary color */
+}
+
+.dark .fc .fc-day-today {
+  background-color: rgba(67, 97, 238, 0.1) !important; /* 10% opacity of primary color */
+}
+
+.fc-daygrid-more-link {
+  color: var(--primary-color) !important; /* Force primary color */
+  font-weight: 600 !important; /* Make the text bolder */
+  cursor: pointer;
+  padding: 2px 6px !important; /* Slightly more padding */
+  margin: 2px;
+  display: block;
+  text-align: center;
+  border-radius: var(--radius-sm);
+  background-color: white !important; /* Solid white background */
+  border: 1px solid var(--border-light) !important; /* Add a subtle border */
+  box-shadow: var(--shadow-light) !important; /* Add slight shadow for depth */
+  transition: all var(--transition-fast);
+}
+
+.fc-daygrid-more-link:hover {
+  background-color: var(--primary-color) !important;
+  color: white !important;
+  border-color: var(--primary-color) !important;
+}
+
+.dark .fc-daygrid-more-link {
+  color: var(--primary-light) !important;
+  background-color: var(--bg-dark) !important;
+  border-color: var(--border-dark) !important;
+  box-shadow: var(--shadow-dark) !important;
+}
+
+.dark .fc-daygrid-more-link:hover {
+  background-color: var(--primary-light) !important;
+  color: var(--bg-dark) !important;
+  border-color: var(--primary-light) !important;
+}
+
+.fc-popover .fc-event {
+  margin-bottom: 8px;
+  border-radius: var(--radius-sm);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  opacity: 1;
+  transition: opacity var(--transition-fast);
+}
+
+.fc-popover .fc-event:hover {
+  opacity: 1;
+}
+
+.fc-popover .fc-event-time,
+.fc-popover .fc-event-title {
+  color: white;
+  font-weight: 500;
+}
+
+.fc-popover .fc-more-link {
+  background-color: var(--primary-color);
+  color: white;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  text-align: center;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-weight: 500;
+}
+
+.fc-popover .fc-more-link:hover {
+  background-color: var(--primary-dark);
+  transform: translateY(-1px);
+}
+
+/* Event color variations */
+.fc-popover .fc-event-blue {
+  background-color: var(--primary-color);
+}
+
+.fc-popover .fc-event-red {
+  background-color: #ef4444;
+}
+
+.fc-popover .fc-event-green {
+  background-color: #10b981;
+}
+
+.fc-popover .fc-event-yellow {
+  background-color: #f59e0b;
+  color: var(--text-dark) !important;
+}
+
+.fc-popover-close {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity var(--transition-fast);
+}
+
+.fc-popover-close:hover {
+  opacity: 1;
+}
+
+/* Scrollbar for popover */
+.fc-popover-body::-webkit-scrollbar {
+  width: 8px;
+}
+
+.fc-popover-body::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 10px;
+}
+
+.fc-popover-body::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+}
+
+/* Event Type styling */
+.event-type {
+  font-weight: 500;
+  display: inline-block;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+
+.event-course {
+  font-size: 0.75em;
+  opacity: 0.8;
+  margin-top: 2px;
+}
+
+/* Additional styling for dropped events */
+.fc-event-dragging {
+  opacity: 0.8;
+  transform: scale(1.03);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 99 !important;
+}
+
+.dark .fc-event-dragging {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+/* Improve event styles for better visibility */
+.fc-event .event-title {
+  font-weight: 600;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.all-day-event .event-title {
+  display: inline-flex;
 }

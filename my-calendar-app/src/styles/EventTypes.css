@@ -1,0 +1,148 @@
+
+/* EventTypes.css */
+.event-types-manager {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.form-section {
+  background-color: var(--bg-light-accent);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  border: 1px solid var(--border-light);
+}
+
+.dark .form-section {
+  background-color: var(--bg-dark-accent);
+  border-color: var(--border-dark);
+}
+
+.help-text {
+  margin-top: 4px;
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.dark .help-text {
+  color: #9ca3af;
+}
+
+.color-selection {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.color-picker {
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.color-preview {
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  color: white;
+  font-weight: 500;
+  display: inline-block;
+}
+
+.event-types-list {
+  margin-top: 24px;
+}
+
+.event-types-list ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.dark .event-types-list ul {
+  border-color: var(--border-dark);
+}
+
+.event-type-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 1px solid var(--border-light);
+  transition: background-color var(--transition-fast);
+}
+
+.dark .event-type-item {
+  border-color: var(--border-dark);
+}
+
+.event-type-item:last-child {
+  border-bottom: none;
+}
+
+.event-type-item:hover {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+.dark .event-type-item:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.event-type-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+}
+
+.event-type-color {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.event-type-details {
+  flex: 1;
+}
+
+.event-type-name {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.event-type-description {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+
+.dark .event-type-description {
+  color: #9ca3af;
+}
+
+.event-type-course {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--primary-color);
+}
+
+.dark .event-type-course {
+  color: var(--primary-light);
+}
+
+.no-event-types-message {
+  padding: 24px;
+  text-align: center;
+  color: #6b7280;
+  font-style: italic;
+}
+
+.dark .no-event-types-message {
+  color: #9ca3af;
+}
+

@@ -50,6 +50,9 @@ const WarningToastContent = ({ warnings, onProceed, onCancel, conflictingEvents 
       {warnings.includes("SingleMeetingTime") && (
         <li>הקורס דורש מפגש של שעה אחת בדיוק.</li>
       )}
+      {warnings.includes("MinimumTimeGap") && (
+        <li>יש פחות מ-12 שעות בין מפגש זה למפגש אחר.</li>
+      )}
     </ul>
     <div className="warning-toast-buttons">
       <button onClick={onProceed} className="btn btn-primary">המשך</button>
@@ -497,31 +500,38 @@ const CalendarComponent = () => {
 
   // Validate an event for conflicts
   const validateEvent = (updatedEvent) => {
+    console.log("validateEvent1");
     const warnings = [];
     const conflictingEvents = [];
     const start = new Date(updatedEvent.start);
     const end = new Date(updatedEvent.end);
     const meetingDuration = (end - start) / (1000 * 60);
-
+    
     // Check meeting duration
     if (meetingDuration !== 60) {
       warnings.push("SingleMeetingTime");
     }
-
+    
     // Check for scheduling conflicts
     events.forEach(ev => {
       if (ev.id === updatedEvent.id) return; // Skip the current event
       
       const evStart = new Date(ev.start);
       const evEnd = new Date(ev.end);
-      
+      const hoursBetween = Math.abs(end - evEnd) / (1000 * 60 * 60);
       // Check for overlap
       if (start < evEnd && evStart < end) {
         warnings.push("ScheduleAvailability");
         conflictingEvents.push(ev);
       }
+      
+      // Check if events are less than 12 hours apart
+      
+      else if (hoursBetween < 12) {
+        warnings.push("MinimumTimeGap");
+      }
     });
-
+    
     return { warnings, conflictingEvents };
   };
 

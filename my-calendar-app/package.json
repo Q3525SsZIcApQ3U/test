@@ -31,6 +31,7 @@
     "express": "^4.21.2",
     "highlight.js": "^11.11.1",
     "ical-generator": "^8.1.1",
+    "ical.js": "^2.1.0",
     "katex": "^0.16.21",
     "lucide-react": "^0.475.0",
     "mysql2": "^3.12.0",

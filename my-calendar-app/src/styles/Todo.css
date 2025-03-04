@@ -1,0 +1,170 @@
+/* Modern Button Design System */
+:root {
+  --primary-color: #4a6cf7; /* Vibrant blue */
+  --primary-hover: #3a5aef; /* Slightly darker blue on hover */
+  --primary-light: #a5b4fc; /* Light variant */
+  --primary-dark: #4338ca; /* Dark variant */
+  
+  --secondary-color: #6b7280; /* Neutral gray */
+  --secondary-hover: #4b5563; /* Darker gray on hover */
+  
+  --danger-color: #ef4444; /* Red for destructive actions */
+  --danger-hover: #dc2626; /* Darker red on hover */
+  
+  --border-radius: 12px; /* Softer rounded corners */
+  --transition-speed: 0.25s;
+}
+
+/* Shared Button Styles */
+.filter-btn, 
+.clear-completed-btn, 
+.add-todo-btn,
+.todo-delete {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border: none;
+  cursor: pointer;
+  transition: 
+    background-color var(--transition-speed) ease,
+    transform var(--transition-speed) ease,
+    box-shadow var(--transition-speed) ease;
+  border-radius: var(--border-radius);
+  padding: 10px 16px;
+  outline: none;
+  user-select: none;
+}
+
+/* Hover and Active States */
+.filter-btn, 
+.clear-completed-btn, 
+.add-todo-btn,
+.todo-delete {
+  background-color: var(--primary-light);
+  color: white;
+}
+
+.filter-btn:hover, 
+.clear-completed-btn:hover, 
+.add-todo-btn:hover,
+.todo-delete:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  background-color: var(--primary-color);
+}
+
+.filter-btn:active, 
+.clear-completed-btn:active, 
+.add-todo-btn:active,
+.todo-delete:active {
+  transform: translateY(1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Filter Buttons Specific Styles */
+.filter-btn {
+  background-color: transparent;
+  color: #64748b;
+  border: 2px solid transparent;
+}
+
+.filter-btn:hover {
+  background-color: rgba(74, 108, 247, 0.1);
+  color: var(--primary-color);
+  border-color: var(--primary-light);
+}
+
+.filter-btn.active {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.filter-count {
+  background-color: rgba(74, 108, 247, 0.2);
+  color: var(--primary-color);
+  border-radius: 16px;
+  padding: 2px 8px;
+  margin-left: 8px;
+  font-size: 12px;
+}
+
+.filter-btn.active .filter-count {
+  background-color: white;
+  color: var(--primary-color);
+}
+
+/* Clear Completed Button */
+.clear-completed-btn {
+  background-color: transparent;
+  color: var(--danger-color);
+  border: 2px solid var(--danger-color);
+}
+
+.clear-completed-btn:hover {
+  background-color: var(--danger-color);
+  color: white;
+}
+
+/* Add Todo Button */
+.add-todo-btn {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.add-todo-btn:hover {
+  background-color: var(--primary-hover);
+}
+
+/* Delete Button */
+.todo-delete {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  background-color: rgba(239, 68, 68, 0.1);
+  color: var(--danger-color);
+}
+
+.todo-delete:hover {
+  background-color: var(--danger-color);
+  color: white;
+}
+
+/* Dark Mode Adjustments */
+.dark .filter-btn {
+  color: #94a3b8;
+}
+
+.dark .filter-btn:hover {
+  background-color: rgba(165, 180, 252, 0.1);
+  color: var(--primary-light);
+}
+
+.dark .filter-btn.active {
+  background-color: var(--primary-light);
+  color: #0f172a;
+}
+
+.dark .clear-completed-btn {
+  color: #f87171;
+  border-color: #f87171;
+}
+
+.dark .clear-completed-btn:hover {
+  background-color: #f87171;
+  color: #0f172a;
+}
+
+/* Responsive Considerations */
+@media (max-width: 768px) {
+  .filter-btn, 
+  .clear-completed-btn, 
+  .add-todo-btn {
+    padding: 8px 14px;
+    font-size: 14px;
+  }
+}
