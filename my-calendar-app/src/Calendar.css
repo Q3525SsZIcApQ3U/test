@@ -882,3 +882,7 @@ select.form-input option[value=""] {
   flex-grow: 1; /* Take up remaining space */
   overflow: hidden; /* Hide overflow if any */
 }
+
+.fc-timegrid-slot {
+  height: 30px !important; /* Adjust this value to make time slots taller */
+}
