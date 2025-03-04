@@ -29,7 +29,7 @@ function App() {
   };
 
   return (
-    <div className={`app-container ${isDarkMode ? 'dark' : ''}`}>
+    <div className={`app-container`}>
         <div className="main-container">
           {/* Button to toggle the sidebar */}
           {/* Layout container */}
