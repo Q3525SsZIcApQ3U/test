@@ -53,7 +53,7 @@ const SettingsComponent = ({ isOpen, onClose, trainers, courses, onSettingsChang
   const [workHours, setWorkHours] = useState(() => {
     // Load persistent settings from localStorage
     const saved = localStorage.getItem('workHours');
-    return saved ? JSON.parse(saved) : { startTime: "07:00:00", endTime: "22:00:00" };
+    return saved ? JSON.parse(saved) : { startTime: "07:00:00z", endTime: "22:00:00z" };
   });
   
   const [tags, setTags] = useState(() => {
@@ -549,7 +549,7 @@ const SettingsComponent = ({ isOpen, onClose, trainers, courses, onSettingsChang
                 <input 
                   type="time" 
                   value={workHours.startTime.slice(0,5)} 
-                  onChange={(e) => setWorkHours({...workHours, startTime: `${e.target.value}:00`})}
+                  onChange={(e) => setWorkHours({...workHours, startTime: `${e.target.value}:00z`})}
                   className="form-input"
                 />
               </div>
@@ -558,7 +558,7 @@ const SettingsComponent = ({ isOpen, onClose, trainers, courses, onSettingsChang
                 <input 
                   type="time" 
                   value={workHours.endTime.slice(0,5)} 
-                  onChange={(e) => setWorkHours({...workHours, endTime: `${e.target.value}:00`})}
+                  onChange={(e) => setWorkHours({...workHours, endTime: `${e.target.value}:00z`})}
                   className="form-input"
                 />
               </div>
@@ -1152,7 +1152,7 @@ const SettingsComponent = ({ isOpen, onClose, trainers, courses, onSettingsChang
                           // Save to localStorage
                           localStorage.setItem('trainers', JSON.stringify(data.trainers || []));
                           localStorage.setItem('courses', JSON.stringify(data.courses || []));
-                          localStorage.setItem('workHours', JSON.stringify(data.workHours || { startTime: "07:00:00", endTime: "22:00:00" }));
+                          localStorage.setItem('workHours', JSON.stringify(data.workHours || { startTime: "07:00:00z", endTime: "22:00:00z" }));
                           localStorage.setItem('colorPalette', JSON.stringify(data.colorPalette || DEFAULT_COLOR_PALETTE));
                           localStorage.setItem('courseTags', JSON.stringify(data.tags || []));
                           localStorage.setItem('eventTypes', JSON.stringify(data.eventTypes || []));

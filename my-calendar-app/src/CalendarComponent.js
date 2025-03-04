@@ -90,8 +90,8 @@ const CalendarComponent = () => {
   const [selectedTrainerFilter, setSelectedTrainerFilter] = useState('');
   const [events, setEvents] = useState([]);
   const [calendarSettings, setCalendarSettings] = useState({
-    slotMinTime: "07:00:00",
-    slotMaxTime: "22:00:00"
+    slotMinTime: "07:00:00z",
+    slotMaxTime: "22:00:00z"
   });
   
   // Refs
@@ -257,8 +257,8 @@ const CalendarComponent = () => {
           const defaultEvent = {
             id: '1',
             title: 'מתמטיקה',
-            start: '2025-02-24T10:00:00',
-            end: '2025-02-24T11:30:00',
+            start: '2025-02-24T10:00:00z',
+            end: '2025-02-24T11:30:00z',
             extendedProps: {
               description: 'שיעור מתמטיקה שבועי',
               location: 'כיתה 101',
