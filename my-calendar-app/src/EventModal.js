@@ -298,6 +298,10 @@ const EventModal = ({
     confirmDelete(event);
   };
 
+  const handleCancelClick = () => {
+    onClose(event);
+  };
+
   return (
     <div className="modal-overlay">
       <div className="modal-content modern">
@@ -507,7 +511,7 @@ const EventModal = ({
               <button type="submit" className="btn btn-primary">
                 {event?.id ? 'עדכן' : 'צור'} אירוע
               </button>
-              <button type="button" className="btn btn-secondary" onClick={onClose}>
+              <button type="button" className="btn btn-secondary" onClick={handleCancelClick}>
                 ביטול
               </button>
               {event?.id && (

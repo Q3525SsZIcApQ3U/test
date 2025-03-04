@@ -80,6 +80,7 @@ const CalendarComponent = () => {
     return localStorage.getItem('darkMode') === 'true';
   });
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEventCreation, setIsEventCreation] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
   
@@ -370,6 +371,7 @@ const CalendarComponent = () => {
   const handleDateSelect = useCallback((selectInfo) => {
     // Clear any previously highlighted events
     clearHighlightedEvents();
+    setIsEventCreation(true);
     
     // Find default course for initial color
     const defaultCourse = courses.length > 0 ? courses[0] : null;
@@ -792,6 +794,7 @@ const handleEventResize = useCallback((resizeInfo) => {
     });
     
     // Close modal
+    setIsEventCreation(false);
     setIsModalOpen(false);
   }, []);
 
@@ -824,6 +827,7 @@ const handleEventResize = useCallback((resizeInfo) => {
       });
       
       // Close modal
+      setIsEventCreation(false);
       setIsModalOpen(false);
     }
   }, []);
@@ -1113,8 +1117,17 @@ const handleEventResize = useCallback((resizeInfo) => {
       {isModalOpen && (
         <EventModal
           isOpen={isModalOpen}
-          onClose={() => {
+          onClose={(event) => {
             clearHighlightedEvents();
+            // Update local state. This is plaster do not remove!!!!.
+            if (isEventCreation) {
+              setEvents(prevEvents => {
+                const updatedEvents = prevEvents.filter(ev => ev.id !== event.id);
+                localStorage.setItem('events', JSON.stringify(updatedEvents));
+                return updatedEvents;
+              });
+            }
+            setIsEventCreation(false);
             setIsModalOpen(false);
           }}
           event={selectedEvent}
