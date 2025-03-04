@@ -1139,13 +1139,13 @@ const handleEventResize = useCallback((resizeInfo) => {
               </option>
             ))}
           </select>
-          <button 
+          {/* <button 
             className="export-button" 
             onClick={exportToICS} 
             title="ייצא לוח שנה"
           >
             ⬇️ ייצא ל-ICS
-          </button>
+          </button> */}
         </div>
       </div>
       

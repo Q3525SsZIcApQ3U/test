@@ -508,12 +508,12 @@ const SettingsComponent = ({ isOpen, onClose, trainers, courses, onSettingsChang
           >
             קורסים
           </button>
-          <button 
+          {/* <button 
             className={`tab-button ${activeTab === 'tags' ? 'active' : ''}`}
             onClick={() => setActiveTab('tags')}
           >
             תגיות
-          </button>
+          </button> */}
           <button 
             className={`tab-button ${activeTab === 'eventTypes' ? 'active' : ''}`}
             onClick={() => setActiveTab('eventTypes')}
@@ -532,12 +532,12 @@ const SettingsComponent = ({ isOpen, onClose, trainers, courses, onSettingsChang
           >
             צבעים
           </button>
-          <button 
+          {/* <button 
             className={`tab-button ${activeTab === 'backup' ? 'active' : ''}`}
             onClick={() => setActiveTab('backup')}
           >
             גיבוי ושחזור
-          </button>
+          </button> */}
         </div>
         
         <div className="settings-content">
