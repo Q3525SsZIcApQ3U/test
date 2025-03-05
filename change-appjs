@@ -1,0 +1,92 @@
+import React, { useState, useEffect } from 'react';
+import CalendarComponent from './components/CalendarComponent';
+import { ThemeProvider, useTheme } from './utils/ThemeManager';
+import './styles/Calendar.css';
+import './styles/ThemeStyles.css';
+import './highlight-register'; // Import this to ensure hljs is registered
+
+// Updated imports for react-pro-sidebar
+import { Sidebar, ProSidebarProvider } from 'react-pro-sidebar';
+import TextEditor from './TextEditor'; // Ensure the path is correct
+
+function AppContent() {
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  // Get theme using the useTheme hook
+  const { isDarkMode } = useTheme();
+
+  // Add loading effect
+  useEffect(() => {
+    // Simulate loading for a smoother experience
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 600);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Toggle sidebar open/close
+  const toggleSidebar = () => {
+    setIsSidebarOpen(prev => !prev);
+  };
+
+  return (
+    <>
+      {isLoading ? (
+        <div className="loading-screen">
+          <div className="loading-spinner"></div>
+          <div className="loading-text">Loading your calendar</div>
+        </div>
+      ) : (
+        <div className="main-container">
+          {/* Button to toggle the sidebar */}
+          <button className="toggle-sidebar-button" onClick={toggleSidebar}>
+            {isSidebarOpen ? '🗙' : '✎'}
+          </button>
+          {/* Layout container */}
+          <div className="content-wrapper" style={{ display: 'flex' }}>
+            <ProSidebarProvider>
+              <Sidebar
+                collapsed={!isSidebarOpen}
+                style={{
+                  display: isSidebarOpen ? 'block' : 'none', // Hide when collapsed
+                  transition: 'display 0.3s ease',
+                  width: '550px',
+                }}
+              >
+                <div style={{ padding: '10px', fontWeight: 'bold' }}>
+                  Text Editor
+                </div>
+                <div>
+                  <TextEditor />
+                </div>
+              </Sidebar>
+            </ProSidebarProvider>
+            <div
+              className="calendar-container"
+              style={{
+                flex: 1,
+                transition: 'padding-left 0.3s',
+                paddingLeft: isSidebarOpen ? '20px' : '0',
+              }}
+            >
+              <CalendarComponent />
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+// Wrapper component that provides the ThemeProvider
+function App() {
+  return (
+    <ThemeProvider>
+      <AppContent />
+    </ThemeProvider>
+  );
+}
+
+export default App;
