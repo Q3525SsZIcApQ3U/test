@@ -1,4 +1,4 @@
-// Enhanced SettingsComponent.js
+// Enhanced SettingsComponent.js with database persistence
 import React, { useState, useEffect } from 'react';
 import TagsManager from './TagsManager';
 import axios from 'axios';
@@ -23,32 +23,73 @@ const SettingsComponent = ({
   const [localTrainers, setLocalTrainers] = useState([]);
   const [localCourses, setLocalCourses] = useState([]);
   const [newTrainerName, setNewTrainerName] = useState('');
-  const [workHours, setWorkHours] = useState(() => {
-    // Load persistent settings from localStorage
-    const saved = localStorage.getItem('workHours');
-    return saved ? JSON.parse(saved) : { startTime: "07:00:00", endTime: "22:01:00" }; // Fixed end time
-  });
+  const [workHours, setWorkHours] = useState({ startTime: "07:00:00", endTime: "22:01:00" });
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  // Load work hours from database on component mount
+  useEffect(() => {
+    const fetchWorkHours = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const response = await axios.get(`${API_BASE_URL}/settings/workhours`);
+        setWorkHours(response.data);
+      } catch (error) {
+        console.error("Error fetching work hours:", error);
+        setError("Failed to load work hours. Using defaults.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchWorkHours();
+  }, []);
   
   // Initialize the state from props when component mounts or when props change
   useEffect(() => {
     if (trainers && trainers.length > 0) {
       setLocalTrainers([...trainers]);
     } else {
-      // Get from localStorage if not provided
-      const savedTrainers = localStorage.getItem('trainers');
-      if (savedTrainers) {
-        setLocalTrainers(JSON.parse(savedTrainers));
-      }
+      // Fetch trainers from database if not provided in props
+      const fetchTrainers = async () => {
+        try {
+          setIsLoading(true);
+          setError(null);
+          const response = await axios.get(`${API_BASE_URL}/trainers`);
+          setLocalTrainers(response.data);
+        } catch (error) {
+          console.error("Error fetching trainers:", error);
+          setError("Failed to load trainers. Using defaults.");
+          setLocalTrainers([]);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      
+      fetchTrainers();
     }
     
     if (courses && courses.length > 0) {
       setLocalCourses([...courses]);
     } else {
-      // Get from localStorage if not provided
-      const savedCourses = localStorage.getItem('courses');
-      if (savedCourses) {
-        setLocalCourses(JSON.parse(savedCourses));
-      }
+      // Fetch courses from database if not provided in props
+      const fetchCourses = async () => {
+        try {
+          setIsLoading(true);
+          setError(null);
+          const response = await axios.get(`${API_BASE_URL}/courses`);
+          setLocalCourses(response.data);
+        } catch (error) {
+          console.error("Error fetching courses:", error);
+          setError("Failed to load courses. Using defaults.");
+          setLocalCourses([]);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      
+      fetchCourses();
     }
   }, [trainers, courses]);
 
@@ -56,12 +97,13 @@ const SettingsComponent = ({
   
   const handleAddTrainer = async () => {
     if (newTrainerName.trim()) {
-      const newTrainer = { id: `t${Date.now()}`, name: newTrainerName };
-      
       try {
+        setIsLoading(true);
+        setError(null);
+        
         // Save to API
         const response = await axios.post(`${API_BASE_URL}/trainers`, {
-          name: newTrainer.name
+          name: newTrainerName
         });
         
         // Use the trainer returned by the API (which should have a DB-generated ID)
@@ -70,49 +112,36 @@ const SettingsComponent = ({
         
         setLocalTrainers(updatedTrainers);
         setNewTrainerName('');
-        
-        // Store in localStorage for persistence
-        localStorage.setItem('trainers', JSON.stringify(updatedTrainers));
       } catch (error) {
         console.error("Error adding trainer:", error);
-        
-        // Still update local state even if API fails
-        const updatedTrainers = [...localTrainers, newTrainer];
-        setLocalTrainers(updatedTrainers);
-        setNewTrainerName('');
-        
-        // Store in localStorage for persistence
-        localStorage.setItem('trainers', JSON.stringify(updatedTrainers));
+        setError("Failed to add trainer. Please try again.");
+      } finally {
+        setIsLoading(false);
       }
     }
   };
   
   const handleDeleteTrainer = async (id) => {
     try {
+      setIsLoading(true);
+      setError(null);
+      
       // Delete from database
       await axios.delete(`${API_BASE_URL}/trainers/${id}`);
       
       // Update local state
       const updatedTrainers = localTrainers.filter(trainer => trainer.id !== id);
       setLocalTrainers(updatedTrainers);
-      
-      // Update localStorage
-      localStorage.setItem('trainers', JSON.stringify(updatedTrainers));
     } catch (error) {
       console.error("Error deleting trainer:", error);
-      
-      // Still update local state even if API call fails
-      const updatedTrainers = localTrainers.filter(trainer => trainer.id !== id);
-      setLocalTrainers(updatedTrainers);
-      
-      // Update localStorage
-      localStorage.setItem('trainers', JSON.stringify(updatedTrainers));
+      setError("Failed to delete trainer. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
   
-  const handleCoursesChange = (updatedCourses) => {
+  const handleCoursesChange = async (updatedCourses) => {
     setLocalCourses(updatedCourses);
-    localStorage.setItem('courses', JSON.stringify(updatedCourses));
     
     if (onSettingsChange) {
       onSettingsChange({ 
@@ -128,47 +157,137 @@ const SettingsComponent = ({
     }
   };
   
+  const handleAddCourse = async (courseName) => {
+    if (!courseName.trim()) return;
+    
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      const newCourse = {
+        name: courseName,
+        color: {
+          bg: '#4361ee', // Default color
+          text: '#FFFFFF'
+        },
+        tags: []
+      };
+      
+      // Save to database
+      const response = await axios.post(`${API_BASE_URL}/courses`, {
+        name: newCourse.name,
+        color: JSON.stringify(newCourse.color),
+        tags: JSON.stringify(newCourse.tags)
+      });
+      
+      // Use the course returned by the API
+      const savedCourse = response.data;
+      const updatedCourses = [...localCourses, savedCourse];
+      
+      // Update local state and notify parent
+      handleCoursesChange(updatedCourses);
+    } catch (error) {
+      console.error("Error adding course:", error);
+      setError("Failed to add course. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  const handleDeleteCourse = async (courseId) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      // Delete from database
+      await axios.delete(`${API_BASE_URL}/courses/${courseId}`);
+      
+      // Update local state
+      const updatedCourses = localCourses.filter(course => course.id !== courseId);
+      handleCoursesChange(updatedCourses);
+    } catch (error) {
+      console.error("Error deleting course:", error);
+      setError("Failed to delete course. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  const handleUpdateCourseColor = async (courseId, color) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      // Find the course to update
+      const courseToUpdate = localCourses.find(course => course.id === courseId);
+      if (!courseToUpdate) {
+        throw new Error("Course not found");
+      }
+      
+      // Update the course in the database
+      const updatedCourse = {
+        ...courseToUpdate,
+        color: { bg: color, text: '#FFFFFF' }
+      };
+      
+      await axios.put(`${API_BASE_URL}/courses/${courseId}`, {
+        name: updatedCourse.name,
+        color: JSON.stringify(updatedCourse.color),
+        tags: JSON.stringify(updatedCourse.tags || [])
+      });
+      
+      // Update local state
+      const updatedCourses = localCourses.map(course => 
+        course.id === courseId ? updatedCourse : course
+      );
+      
+      handleCoursesChange(updatedCourses);
+    } catch (error) {
+      console.error("Error updating course color:", error);
+      setError("Failed to update course color. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
   const handleSave = async () => {
     try {
+      setIsLoading(true);
+      setError(null);
+      
       // Ensure end time is set correctly (add 1 minute if needed)
       const endTime = workHours.endTime;
       const endTimeParts = endTime.split(':');
-      if (endTimeParts[1] === '00' && endTimeParts[2] === '00') {
-        workHours.endTime = `${endTimeParts[0]}:01:00`;
+      const finalEndTime = (endTimeParts[1] === '00' && endTimeParts[2] === '00') 
+        ? `${endTimeParts[0]}:01:00` 
+        : endTime;
+      
+      const finalWorkHours = {
+        startTime: workHours.startTime,
+        endTime: finalEndTime
+      };
+      
+      // Save work hours to database
+      await axios.post(`${API_BASE_URL}/settings/workhours`, finalWorkHours);
+      
+      // Notify parent component
+      if (onSettingsChange) {
+        onSettingsChange({ 
+          type: 'workHours', 
+          startTime: finalWorkHours.startTime, 
+          endTime: finalWorkHours.endTime 
+        });
+        
+        onSettingsChange({ type: 'trainers', trainers: localTrainers });
+        onSettingsChange({ type: 'courses', courses: localCourses });
       }
-      
-      // Save trainers
-      await axios.put(`${API_BASE_URL}/trainers`, localTrainers);
-      onSettingsChange({ type: 'trainers', trainers: localTrainers });
-      
-      // Save courses
-      await axios.put(`${API_BASE_URL}/courses`, localCourses);
-      onSettingsChange({ type: 'courses', courses: localCourses });
-      
-      // Save work hours
-      await axios.put(`${API_BASE_URL}/settings/workhours`, workHours);
-      onSettingsChange({ type: 'workHours', startTime: workHours.startTime, endTime: workHours.endTime });
-      
-      // Persist settings locally
-      localStorage.setItem('workHours', JSON.stringify(workHours));
-      localStorage.setItem('trainers', JSON.stringify(localTrainers));
-      localStorage.setItem('courses', JSON.stringify(localCourses));
       
       onClose();
     } catch (error) {
       console.error("Error saving settings:", error);
-      
-      // Fall back to local changes if API fails
-      onSettingsChange({ type: 'trainers', trainers: localTrainers });
-      onSettingsChange({ type: 'courses', courses: localCourses });
-      onSettingsChange({ type: 'workHours', startTime: workHours.startTime, endTime: workHours.endTime });
-      
-      // Still persist settings locally
-      localStorage.setItem('workHours', JSON.stringify(workHours));
-      localStorage.setItem('trainers', JSON.stringify(localTrainers));
-      localStorage.setItem('courses', JSON.stringify(localCourses));
-      
-      onClose();
+      setError("Failed to save settings. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -179,6 +298,19 @@ const SettingsComponent = ({
           <h2>הגדרות</h2>
           <button className="close-button" onClick={onClose}>×</button>
         </div>
+        
+        {error && (
+          <div className="error-message">
+            {error}
+          </div>
+        )}
+        
+        {isLoading && (
+          <div className="loading-spinner-container">
+            <div className="loading-spinner"></div>
+            <span>טוען...</span>
+          </div>
+        )}
         
         <div className="settings-tabs">
           <button 
@@ -265,7 +397,11 @@ const SettingsComponent = ({
                     className="form-input"
                     placeholder="שם המאמן החדש"
                   />
-                  <button className="btn btn-primary" onClick={handleAddTrainer}>
+                  <button 
+                    className="btn btn-primary" 
+                    onClick={handleAddTrainer}
+                    disabled={isLoading}
+                  >
                     הוסף
                   </button>
                 </div>
@@ -280,6 +416,7 @@ const SettingsComponent = ({
                         <button 
                           className="btn btn-danger btn-small" 
                           onClick={() => handleDeleteTrainer(trainer.id)}
+                          disabled={isLoading}
                         >
                           הסר
                         </button>
@@ -316,20 +453,11 @@ const SettingsComponent = ({
                         const courseNameInput = document.getElementById('new-course-name');
                         const courseName = courseNameInput.value.trim();
                         if (courseName) {
-                          const newCourse = {
-                            id: `c${Date.now()}`,
-                            name: courseName,
-                            color: {
-                              bg: '#4361ee', // Default color
-                              text: '#FFFFFF'
-                            },
-                            tags: []
-                          };
-                          
-                          handleCoursesChange([...localCourses, newCourse]);
+                          handleAddCourse(courseName);
                           courseNameInput.value = '';
                         }
                       }}
+                      disabled={isLoading}
                     >
                       הוסף
                     </button>
@@ -365,15 +493,14 @@ const SettingsComponent = ({
                                   colorPicker.style.display = colorPicker.style.display === 'none' ? 'block' : 'none';
                                 }
                               }}
+                              disabled={isLoading}
                             >
                               צבע
                             </button>
                             <button 
                               className="btn btn-danger btn-small"
-                              onClick={() => {
-                                const updatedCourses = localCourses.filter(c => c.id !== course.id);
-                                handleCoursesChange(updatedCourses);
-                              }}
+                              onClick={() => handleDeleteCourse(course.id)}
+                              disabled={isLoading}
                             >
                               הסר
                             </button>
@@ -394,16 +521,7 @@ const SettingsComponent = ({
                                   className={`color-swatch ${course.color?.bg === color ? 'selected' : ''}`}
                                   style={{ backgroundColor: color }}
                                   onClick={() => {
-                                    const updatedCourses = localCourses.map(c => {
-                                      if (c.id === course.id) {
-                                        return {
-                                          ...c,
-                                          color: { bg: color, text: '#FFFFFF' }
-                                        };
-                                      }
-                                      return c;
-                                    });
-                                    handleCoursesChange(updatedCourses);
+                                    handleUpdateCourseColor(course.id, color);
                                     
                                     // Hide color picker
                                     const colorPicker = document.getElementById(`color-picker-${course.id}`);
@@ -458,11 +576,19 @@ const SettingsComponent = ({
         
         <div className="settings-footer">
           <div className="button-group button-group-inline">
-            <button className="btn btn-secondary" onClick={onClose}>
+            <button 
+              className="btn btn-secondary" 
+              onClick={onClose}
+              disabled={isLoading}
+            >
               ביטול
             </button>
-            <button className="btn btn-primary" onClick={handleSave}>
-              שמור שינויים
+            <button 
+              className="btn btn-primary" 
+              onClick={handleSave}
+              disabled={isLoading}
+            >
+              {isLoading ? 'שומר...' : 'שמור שינויים'}
             </button>
           </div>
         </div>

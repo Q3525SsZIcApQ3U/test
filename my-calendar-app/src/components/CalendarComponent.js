@@ -16,7 +16,7 @@ import ContextMenu from './ContextMenu';
 // API base URL
 const API_BASE_URL = 'http://localhost:5001/api';
 
-// Default Color palette for courses (will use custom palette from localStorage if available)
+// Default Color palette for courses (will be loaded from database)
 const DEFAULT_COLOR_PALETTE = [
   { bg: '#4361ee', text: '#FFFFFF' },
   { bg: '#3a56d4', text: '#FFFFFF' },
@@ -75,9 +75,7 @@ const DeleteConfirmationToast = ({ event, onConfirm, onCancel }) => (
 /* -------------------------- Main Calendar Component -------------------------- */
 const CalendarComponent = ({ isDarkMode, setIsDarkMode }) => {
   // If props are not provided, use local state
-  const [localDarkMode, setLocalDarkMode] = useState(() => {
-    return localStorage.getItem('darkMode') === 'true';
-  });
+  const [localDarkMode, setLocalDarkMode] = useState(false);
   
   // Use props if available, otherwise use local state
   const effectiveDarkMode = isDarkMode !== undefined ? isDarkMode : localDarkMode;
@@ -86,6 +84,8 @@ const CalendarComponent = ({ isDarkMode, setIsDarkMode }) => {
       setIsDarkMode(!effectiveDarkMode);
     } else {
       setLocalDarkMode(!effectiveDarkMode);
+      // Save to database
+      saveSetting('darkMode', !effectiveDarkMode);
     }
   }, [effectiveDarkMode, setIsDarkMode]);
   
@@ -100,6 +100,7 @@ const CalendarComponent = ({ isDarkMode, setIsDarkMode }) => {
   // State for data
   const [courses, setCourses] = useState([]);
   const [trainers, setTrainers] = useState([]);
+  const [eventTypes, setEventTypes] = useState([]);
   const [selectedTrainerFilter, setSelectedTrainerFilter] = useState('');
   const [events, setEvents] = useState([]);
   const [calendarSettings, setCalendarSettings] = useState({
@@ -110,9 +111,22 @@ const CalendarComponent = ({ isDarkMode, setIsDarkMode }) => {
   // State for app tabs
   const [activeTab, setActiveTab] = useState('calendar');
   
+  // Loading and error states
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  
   // Refs
   const calendarRef = useRef(null);
   const highlightedEventRef = useRef(null);
+  
+  // Helper function to save settings to the database
+  const saveSetting = async (key, value) => {
+    try {
+      await axios.post(`${API_BASE_URL}/settings`, { key, value });
+    } catch (error) {
+      console.error(`Error saving setting [${key}]:`, error);
+    }
+  };
   
   // Helper function to process recurring events with excluded dates
   const processRecurringEvent = (event) => {
@@ -148,49 +162,49 @@ const CalendarComponent = ({ isDarkMode, setIsDarkMode }) => {
     return event;
   };
   
-  // Persist dark mode if we're using local state
+  // Load app settings and preferences on mount
   useEffect(() => {
-    if (isDarkMode === undefined) {
-      localStorage.setItem('darkMode', localDarkMode);
-      
-      // Apply dark mode to document body for consistent styling
-      if (localDarkMode) {
-        document.body.classList.add('dark-mode');
-      } else {
-        document.body.classList.remove('dark-mode');
+    const fetchSettings = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        
+        // Get all settings at once
+        const response = await axios.get(`${API_BASE_URL}/settings`);
+        const settings = response.data;
+        
+        // Apply dark mode if available
+        if (settings.darkMode !== undefined) {
+          setLocalDarkMode(settings.darkMode);
+          // Apply dark mode to document body for consistent styling
+          if (settings.darkMode) {
+            document.body.classList.add('dark-mode');
+          } else {
+            document.body.classList.remove('dark-mode');
+          }
+        }
+        
+        // Apply work hours if available
+        if (settings.workHours) {
+          setCalendarSettings({
+            slotMinTime: settings.workHours.startTime,
+            slotMaxTime: settings.workHours.endTime
+          });
+        }
+        
+        // Apply active tab if available
+        if (settings.activeTab) {
+          setActiveTab(settings.activeTab);
+        }
+      } catch (error) {
+        console.error("Error fetching settings:", error);
+        setError("Failed to load settings. Using defaults.");
+      } finally {
+        setIsLoading(false);
       }
-    }
-  }, [localDarkMode, isDarkMode]);
-
-  // Load data from localStorage on mount
-  useEffect(() => {
-    // Load courses from localStorage
-    const savedCourses = localStorage.getItem('courses');
-    if (savedCourses) {
-      setCourses(JSON.parse(savedCourses));
-    }
+    };
     
-    // Load trainers from localStorage
-    const savedTrainers = localStorage.getItem('trainers');
-    if (savedTrainers) {
-      setTrainers(JSON.parse(savedTrainers));
-    }
-    
-    // Load work hours from localStorage
-    const savedWorkHours = localStorage.getItem('workHours');
-    if (savedWorkHours) {
-      const parsedWorkHours = JSON.parse(savedWorkHours);
-      setCalendarSettings({
-        slotMinTime: parsedWorkHours.startTime,
-        slotMaxTime: parsedWorkHours.endTime
-      });
-    }
-    
-    // Load active tab from localStorage if exists
-    const savedTab = localStorage.getItem('activeTab');
-    if (savedTab) {
-      setActiveTab(savedTab);
-    }
+    fetchSettings();
     
     // Add drag boundary check for document
     document.addEventListener('mouseup', handleDragOutsideWindow);
@@ -199,7 +213,13 @@ const CalendarComponent = ({ isDarkMode, setIsDarkMode }) => {
       document.removeEventListener('mouseup', handleDragOutsideWindow);
     };
   }, []);
-  
+
+  // Save active tab to database when it changes
+  useEffect(() => {
+    // Save active tab to settings
+    saveSetting('activeTab', activeTab);
+  }, [activeTab]);
+
   // Handle drag outside window
   const handleDragOutsideWindow = () => {
     if (calendarRef.current) {
@@ -211,117 +231,118 @@ const CalendarComponent = ({ isDarkMode, setIsDarkMode }) => {
     }
   };
 
-  // Save active tab to localStorage when it changes
+  // Fetch courses from database
   useEffect(() => {
-    localStorage.setItem('activeTab', activeTab);
-  }, [activeTab]);
-
-  // Fetch courses if not in localStorage
-  useEffect(() => {
-    if (courses.length === 0) {
-      const fetchCourses = async () => {
-        try {
-          const response = await axios.get(`${API_BASE_URL}/courses`);
-          const fetchedCourses = response.data;
-          setCourses(fetchedCourses);
-          localStorage.setItem('courses', JSON.stringify(fetchedCourses));
-        } catch (error) {
-          console.error("Error fetching courses:", error);
-          
-          // Use default courses if API fails
-          const defaultCourses = [
-            { id: '1', name: 'מתמטיקה', color: DEFAULT_COLOR_PALETTE[0], tags: [] },
-            { id: '2', name: 'פיזיקה', color: DEFAULT_COLOR_PALETTE[1], tags: [] }
-          ];
-          setCourses(defaultCourses);
-          localStorage.setItem('courses', JSON.stringify(defaultCourses));
-        }
-      };
-      fetchCourses();
-    }
-  }, [courses.length]);
-
-  // Fetch trainers if not in localStorage
-  useEffect(() => {
-    if (trainers.length === 0) {
-      const fetchTrainers = async () => {
-        try {
-          const response = await axios.get(`${API_BASE_URL}/trainers`);
-          const fetchedTrainers = response.data;
-          setTrainers(fetchedTrainers);
-          localStorage.setItem('trainers', JSON.stringify(fetchedTrainers));
-        } catch (error) {
-          console.error("Error fetching trainers:", error);
-          
-          // Use default trainers if API fails
-          const defaultTrainers = [
-            { id: 't1', name: 'אדם' },
-            { id: 't2', name: 'שרה' }
-          ];
-          setTrainers(defaultTrainers);
-          localStorage.setItem('trainers', JSON.stringify(defaultTrainers));
-        }
-      };
-      fetchTrainers();
-    }
-  }, [trainers.length]);
-
-  // Fetch work hours if not in localStorage
-  useEffect(() => {
-    const fetchWorkHours = async () => {
+    const fetchCourses = async () => {
       try {
-        const response = await axios.get(`${API_BASE_URL}/settings/workhours`);
-        const workHoursData = {
-          startTime: response.data.startTime,
-          endTime: response.data.endTime
-        };
-        setCalendarSettings(workHoursData);
-        localStorage.setItem('workHours', JSON.stringify(workHoursData));
+        setIsLoading(true);
+        const response = await axios.get(`${API_BASE_URL}/courses`);
+        setCourses(response.data);
       } catch (error) {
-        console.error("Error fetching work hours:", error);
+        console.error("Error fetching courses:", error);
+        // Use default courses if API fails
+        const defaultCourses = [
+          { id: '1', name: 'מתמטיקה', color: DEFAULT_COLOR_PALETTE[0], tags: [] },
+          { id: '2', name: 'פיזיקה', color: DEFAULT_COLOR_PALETTE[1], tags: [] }
+        ];
+        setCourses(defaultCourses);
+      } finally {
+        setIsLoading(false);
       }
     };
     
-    if (!localStorage.getItem('workHours')) {
-      fetchWorkHours();
-    }
+    fetchCourses();
   }, []);
 
-  // Fetch events
+  // Fetch trainers from database
+  useEffect(() => {
+    const fetchTrainers = async () => {
+      try {
+        setIsLoading(true);
+        const response = await axios.get(`${API_BASE_URL}/trainers`);
+        setTrainers(response.data);
+      } catch (error) {
+        console.error("Error fetching trainers:", error);
+        // Use default trainers if API fails
+        const defaultTrainers = [
+          { id: 't1', name: 'אדם' },
+          { id: 't2', name: 'שרה' }
+        ];
+        setTrainers(defaultTrainers);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchTrainers();
+  }, []);
+
+  // Fetch event types from database
+  useEffect(() => {
+    const fetchEventTypes = async () => {
+      try {
+        setIsLoading(true);
+        const response = await axios.get(`${API_BASE_URL}/event-types`);
+        setEventTypes(response.data);
+      } catch (error) {
+        console.error("Error fetching event types:", error);
+        // Use default event types if API fails
+        const defaultEventTypes = [
+          { id: 'et1', name: 'שיעור פרטי', icon: '👤', color: '#3a56d4' },
+          { id: 'et2', name: 'שיעור קבוצתי', icon: '👥', color: '#10b981' },
+          { id: 'et3', name: 'בחינה', icon: '📝', color: '#ef4444' }
+        ];
+        setEventTypes(defaultEventTypes);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchEventTypes();
+  }, []);
+
+  // Fetch work hours from database
+  useEffect(() => {
+    const fetchWorkHours = async () => {
+      try {
+        setIsLoading(true);
+        const response = await axios.get(`${API_BASE_URL}/settings/workhours`);
+        setCalendarSettings({
+          slotMinTime: response.data.startTime,
+          slotMaxTime: response.data.endTime
+        });
+      } catch (error) {
+        console.error("Error fetching work hours:", error);
+        // Use default work hours if API fails
+        setCalendarSettings({
+          slotMinTime: "07:00:00",
+          slotMaxTime: "22:01:00"
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchWorkHours();
+  }, []);
+
+  // Fetch events from database
   useEffect(() => {
     const fetchEvents = async () => {
       try {
+        setIsLoading(true);
         const response = await axios.get(`${API_BASE_URL}/events`);
         
         // Process event data from API
         const formattedEvents = response.data.map(event => {
-          // Parse JSON strings to objects
-          const parsedExtendedProps = typeof event.extendedProps === 'string'
-            ? JSON.parse(event.extendedProps)
-            : event.extendedProps || {};
-            
-          const parsedRrule = typeof event.rrule === 'string'
-            ? JSON.parse(event.rrule)
-            : event.rrule;
-            
-          const parsedDuration = typeof event.duration === 'string'
-            ? JSON.parse(event.duration)
-            : event.duration;
-          
           // Get course color if available
-          const courseId = parsedExtendedProps?.courseId;
+          const courseId = event.extendedProps?.courseId;
           const course = courseId ? courses.find(c => c.id === courseId) : null;
           
           // Return formatted event
           const formattedEvent = {
             ...event,
-            extendedProps: parsedExtendedProps,
-            rrule: parsedRrule,
-            duration: parsedDuration,
-            start: new Date(event.start).toISOString(),
-            end: new Date(event.end).toISOString(),
             backgroundColor: course?.color?.bg || event.backgroundColor || '#4361ee',
-            allDay: event.allDay || parsedExtendedProps?.isAllDay || false
           };
           
           // Process recurring events with exdates
@@ -329,42 +350,35 @@ const CalendarComponent = ({ isDarkMode, setIsDarkMode }) => {
         });
         
         setEvents(formattedEvents);
-        localStorage.setItem('events', JSON.stringify(formattedEvents));
       } catch (error) {
         console.error("Error fetching events:", error);
         
-        // Try to load from localStorage if API fails
-        const savedEvents = localStorage.getItem('events');
-        if (savedEvents) {
-          const parsedEvents = JSON.parse(savedEvents).map(processRecurringEvent);
-          setEvents(parsedEvents);
-        } else {
-          // Use default event if nothing available
-          const defaultEvent = {
-            id: '1',
-            title: 'מתמטיקה',
-            start: '2025-02-24T10:00:00',
-            end: '2025-02-24T11:30:00',
-            extendedProps: {
-              description: 'שיעור מתמטיקה שבועי',
-              location: 'כיתה 101',
-              courseId: '1',
-              trainerId: 't1',
-              tags: []
-            },
-            backgroundColor: DEFAULT_COLOR_PALETTE[0].bg,
-            rrule: {
-              freq: 'weekly',
-              dtstart: '2025-02-24T10:00:00',
-              until: '2025-06-24T23:59:59',
-              interval: 1
-            },
-            duration: { hours: 1, minutes: 30 }
-          };
-          
-          setEvents([processRecurringEvent(defaultEvent)]);
-          localStorage.setItem('events', JSON.stringify([defaultEvent]));
-        }
+        // Use default event if API fails
+        const defaultEvent = {
+          id: '1',
+          title: 'מתמטיקה',
+          start: '2025-02-24T10:00:00',
+          end: '2025-02-24T11:30:00',
+          extendedProps: {
+            description: 'שיעור מתמטיקה שבועי',
+            location: 'כיתה 101',
+            courseId: '1',
+            trainerId: 't1',
+            tags: []
+          },
+          backgroundColor: DEFAULT_COLOR_PALETTE[0].bg,
+          rrule: {
+            freq: 'weekly',
+            dtstart: '2025-02-24T10:00:00',
+            until: '2025-06-24T23:59:59',
+            interval: 1
+          },
+          duration: { hours: 1, minutes: 30 }
+        };
+        
+        setEvents([processRecurringEvent(defaultEvent)]);
+      } finally {
+        setIsLoading(false);
       }
     };
     
@@ -451,7 +465,7 @@ const CalendarComponent = ({ isDarkMode, setIsDarkMode }) => {
     highlightedEventRef.current = [];
   };
 
-  // Save/update event to backend
+  // Save/update event to database
   const saveEventToDB = async (event) => {
     try {
       // Format event data for API
@@ -476,9 +490,11 @@ const CalendarComponent = ({ isDarkMode, setIsDarkMode }) => {
       } else {
         await axios.put(`${API_BASE_URL}/events/${event.id}`, eventData);
       }
+      
+      return true;
     } catch (error) {
       console.error("Error saving event to database:", error);
-      // Note: event will still be updated in local state even if API fails
+      return false;
     }
   };
 
@@ -520,7 +536,7 @@ const CalendarComponent = ({ isDarkMode, setIsDarkMode }) => {
   };
 
   // Handle update event (from modal)
-  const handleUpdateEvent = useCallback((updatedEvent) => {
+  const handleUpdateEvent = useCallback(async (updatedEvent) => {
     // Clear any previously highlighted events
     clearHighlightedEvents();
     
@@ -528,64 +544,68 @@ const CalendarComponent = ({ isDarkMode, setIsDarkMode }) => {
     const processedEvent = processRecurringEvent(updatedEvent);
     
     // Save to database
-    saveEventToDB(processedEvent);
+    const saveResult = await saveEventToDB(processedEvent);
     
-    // Update local state
-    setEvents(prevEvents => {
-      let newEvents;
-      
-      // Handle exception cases (special occurrences of recurring events)
-      if (processedEvent.isException) {
-        const originalEvent = prevEvents.find(e => 
-          e.id === processedEvent.extendedProps.originalEventId
-        );
+    if (saveResult) {
+      // Update local state
+      setEvents(prevEvents => {
+        let newEvents;
         
-        if (originalEvent) {
-          // Check if there's already an exception for this occurrence
-          const existingException = prevEvents.find(e => 
-            e.extendedProps?.isException && 
-            e.extendedProps?.originalEventId === originalEvent.id &&
-            e.extendedProps?.originalDate === processedEvent.extendedProps.originalDate
+        // Handle exception cases (special occurrences of recurring events)
+        if (processedEvent.isException) {
+          const originalEvent = prevEvents.find(e => 
+            e.id === processedEvent.extendedProps.originalEventId
           );
           
-          if (existingException) {
-            // Update existing exception
-            newEvents = prevEvents.map(ev => 
-              ev.id === existingException.id ? processedEvent : ev
+          if (originalEvent) {
+            // Check if there's already an exception for this occurrence
+            const existingException = prevEvents.find(e => 
+              e.extendedProps?.isException && 
+              e.extendedProps?.originalEventId === originalEvent.id &&
+              e.extendedProps?.originalDate === processedEvent.extendedProps.originalDate
             );
+            
+            if (existingException) {
+              // Update existing exception
+              newEvents = prevEvents.map(ev => 
+                ev.id === existingException.id ? processedEvent : ev
+              );
+            } else {
+              // Add new exception
+              newEvents = [...prevEvents, processedEvent];
+            }
           } else {
-            // Add new exception
             newEvents = [...prevEvents, processedEvent];
           }
         } else {
-          newEvents = [...prevEvents, processedEvent];
+          // Handle regular event updates
+          const eventExists = prevEvents.some(ev => ev.id === processedEvent.id);
+          
+          if (eventExists) {
+            // Update existing event
+            newEvents = prevEvents.map(ev => 
+              ev.id === processedEvent.id ? { ...ev, ...processedEvent } : ev
+            );
+          } else {
+            // Add new event
+            newEvents = [...prevEvents, processedEvent];
+          }
         }
-      } else {
-        // Handle regular event updates
-        const eventExists = prevEvents.some(ev => ev.id === processedEvent.id);
         
-        if (eventExists) {
-          // Update existing event
-          newEvents = prevEvents.map(ev => 
-            ev.id === processedEvent.id ? { ...ev, ...processedEvent } : ev
-          );
-        } else {
-          // Add new event
-          newEvents = [...prevEvents, processedEvent];
-        }
-      }
+        // Process all recurring events to ensure proper formatting
+        return newEvents.map(processRecurringEvent);
+      });
       
-      // Process all recurring events to ensure proper formatting
-      newEvents = newEvents.map(processRecurringEvent);
-      
-      // Save to localStorage
-      localStorage.setItem('events', JSON.stringify(newEvents));
-      return newEvents;
-    });
+      // Show success message
+      toast.success('האירוע נשמר בהצלחה');
+    } else {
+      // Show error message
+      toast.error('שגיאה בשמירת האירוע');
+    }
     
     // Close modal
     setIsModalOpen(false);
-  }, []);
+  }, [events]);
 
   // Handle event click - with support for excluding individual instances
   const handleEventClick = useCallback((clickInfo) => {
@@ -744,12 +764,6 @@ const CalendarComponent = ({ isDarkMode, setIsDarkMode }) => {
     const calendarApi = selectInfo.view.calendar;
     calendarApi.unselect(); // clear date selection
     
-    // Add event to state temporarily
-    setEvents(prevEvents => {
-      const updatedEvents = [...prevEvents, newEvent];
-      return updatedEvents;
-    });
-    
     // For all-day events, don't highlight conflicts
     if (!isAllDay) {
       // Highlight any conflicting events
@@ -759,10 +773,10 @@ const CalendarComponent = ({ isDarkMode, setIsDarkMode }) => {
     // Open modal with new event
     setSelectedEvent(newEvent);
     setIsModalOpen(true);
-  }, [selectedTrainerFilter, courses, events]);
+  }, [selectedTrainerFilter, courses]);
 
   // Handle event drop - with support for all-day to time conversion
-  const handleEventDrop = useCallback((dropInfo) => {
+  const handleEventDrop = useCallback(async (dropInfo) => {
     // Clear any previously highlighted events
     clearHighlightedEvents();
     
@@ -784,13 +798,13 @@ const CalendarComponent = ({ isDarkMode, setIsDarkMode }) => {
         start: event.startStr,
         end: new Date(new Date(event.startStr).getTime() + 60 * 60 * 1000).toISOString(), // 1 hour duration
         allDay: false,
-extendedProps: {
+        extendedProps: {
           ...originalEvent.extendedProps,
           isAllDay: false
         }
       };
       
-      // If there's a recurring rule, update it
+// If there's a recurring rule, update it
       if (updatedEvent.rrule) {
         updatedEvent.rrule = {
           ...updatedEvent.rrule,
@@ -805,12 +819,18 @@ extendedProps: {
       }
       
       // Save and update
-      saveEventToDB(updatedEvent);
-      setEvents(prevEvents => {
-        const updatedEvents = prevEvents.map(ev => ev.id === updatedEvent.id ? updatedEvent : ev);
-        localStorage.setItem('events', JSON.stringify(updatedEvents));
-        return updatedEvents;
-      });
+      const saveResult = await saveEventToDB(updatedEvent);
+      
+      if (saveResult) {
+        setEvents(prevEvents => {
+          const updatedEvents = prevEvents.map(ev => ev.id === updatedEvent.id ? updatedEvent : ev);
+          return updatedEvents;
+        });
+        toast.success('האירוע עודכן בהצלחה');
+      } else {
+        toast.error('שגיאה בעדכון האירוע');
+        dropInfo.revert(); // Revert the drop if save failed
+      }
       
       return;
     }
@@ -835,14 +855,20 @@ extendedProps: {
           dtstart: event.startStr
         };
       }
-      updatedEvent.backgroundColor = event.backgroundColor;
+      
       // Save directly without conflict checking
-      saveEventToDB(updatedEvent);
-      setEvents(prevEvents => {
-        const updatedEvents = prevEvents.map(ev => ev.id === updatedEvent.id ? updatedEvent : ev);
-        localStorage.setItem('events', JSON.stringify(updatedEvents));
-        return updatedEvents;
-      });
+      const saveResult = await saveEventToDB(updatedEvent);
+      
+      if (saveResult) {
+        setEvents(prevEvents => {
+          const updatedEvents = prevEvents.map(ev => ev.id === updatedEvent.id ? updatedEvent : ev);
+          return updatedEvents;
+        });
+        toast.success('האירוע עודכן בהצלחה');
+      } else {
+        toast.error('שגיאה בעדכון האירוע');
+        dropInfo.revert(); // Revert the drop if save failed
+      }
       
       return;
     }
@@ -861,7 +887,6 @@ extendedProps: {
       end: new Date((new Date(originalEvent.end)).getTime() + timeShift).toISOString(), // Keep the modified end time
       extendedProps: event.extendedProps,
       allDay: event.allDay,
-      backgroundColor: event.backgroundColor,
       rrule: originalEvent.rrule
         ? {
             ...originalEvent.rrule,
@@ -891,15 +916,22 @@ extendedProps: {
         <WarningToastContent
           warnings={warnings}
           conflictingEvents={conflictingEvents}
-          onProceed={() => {
+          onProceed={async () => {
             toast.dismiss();
             clearHighlightedEvents();
-            saveEventToDB(updatedEvent);
-            setEvents(prevEvents => {
-              const updatedEvents = prevEvents.map(ev => ev.id === updatedEvent.id ? updatedEvent : ev);
-              localStorage.setItem('events', JSON.stringify(updatedEvents));
-              return updatedEvents;
-            });
+            
+            const saveResult = await saveEventToDB(updatedEvent);
+            
+            if (saveResult) {
+              setEvents(prevEvents => {
+                const updatedEvents = prevEvents.map(ev => ev.id === updatedEvent.id ? updatedEvent : ev);
+                return updatedEvents;
+              });
+              toast.success('האירוע עודכן בהצלחה למרות האזהרות');
+            } else {
+              toast.error('שגיאה בעדכון האירוע');
+              dropInfo.revert(); // Revert the drop if save failed
+            }
           }}
           onCancel={() => {
             toast.dismiss();
@@ -915,16 +947,22 @@ extendedProps: {
     // If no warnings, update event normally
     clearHighlightedEvents();
     
-    saveEventToDB(updatedEvent);
-    setEvents(prevEvents => {
-      const updatedEvents = prevEvents.map(ev => ev.id === updatedEvent.id ? updatedEvent : ev);
-      localStorage.setItem('events', JSON.stringify(updatedEvents));
-      return updatedEvents;
-    });
+    const saveResult = await saveEventToDB(updatedEvent);
+    
+    if (saveResult) {
+      setEvents(prevEvents => {
+        const updatedEvents = prevEvents.map(ev => ev.id === updatedEvent.id ? updatedEvent : ev);
+        return updatedEvents;
+      });
+      toast.success('האירוע עודכן בהצלחה');
+    } else {
+      toast.error('שגיאה בעדכון האירוע');
+      dropInfo.revert(); // Revert the drop if save failed
+    }
   }, [events]);
 
   // Handle event resize
-  const handleEventResize = useCallback((resizeInfo) => {
+  const handleEventResize = useCallback(async (resizeInfo) => {
     // Clear any previously highlighted events
     clearHighlightedEvents();
     
@@ -947,12 +985,18 @@ extendedProps: {
       };
       
       // Save directly without conflict checking
-      saveEventToDB(updatedEvent);
-      setEvents(prevEvents => {
-        const updatedEvents = prevEvents.map(ev => ev.id === updatedEvent.id ? updatedEvent : ev);
-        localStorage.setItem('events', JSON.stringify(updatedEvents));
-        return updatedEvents;
-      });
+      const saveResult = await saveEventToDB(updatedEvent);
+      
+      if (saveResult) {
+        setEvents(prevEvents => {
+          const updatedEvents = prevEvents.map(ev => ev.id === updatedEvent.id ? updatedEvent : ev);
+          return updatedEvents;
+        });
+        toast.success('האירוע עודכן בהצלחה');
+      } else {
+        toast.error('שגיאה בעדכון האירוע');
+        resizeInfo.revert(); // Revert the resize if save failed
+      }
       
       return;
     }
@@ -970,7 +1014,6 @@ extendedProps: {
       start: originalEvent.start, // Keep original start time
       end: new Date(originalEnd.getTime() + timeShift).toISOString(), // Shifted end time
       extendedProps: originalEvent.extendedProps,
-      backgroundColor: event.backgroundColor,
       allDay: event.allDay,
       rrule: originalEvent.rrule
         ? {
@@ -1001,15 +1044,22 @@ extendedProps: {
         <WarningToastContent
           warnings={warnings}
           conflictingEvents={conflictingEvents}
-          onProceed={() => {
+          onProceed={async () => {
             toast.dismiss();
             clearHighlightedEvents();
-            saveEventToDB(updatedEvent);
-            setEvents(prevEvents => {
-              const updatedEvents = prevEvents.map(ev => ev.id === updatedEvent.id ? updatedEvent : ev);
-              localStorage.setItem('events', JSON.stringify(updatedEvents));
-              return updatedEvents;
-            });
+            
+            const saveResult = await saveEventToDB(updatedEvent);
+            
+            if (saveResult) {
+              setEvents(prevEvents => {
+                const updatedEvents = prevEvents.map(ev => ev.id === updatedEvent.id ? updatedEvent : ev);
+                return updatedEvents;
+              });
+              toast.success('האירוע עודכן בהצלחה למרות האזהרות');
+            } else {
+              toast.error('שגיאה בעדכון האירוע');
+              resizeInfo.revert(); // Revert the resize if save failed
+            }
           }}
           onCancel={() => {
             toast.dismiss();
@@ -1024,12 +1074,19 @@ extendedProps: {
     
     // If no warnings, update event normally
     clearHighlightedEvents();
-    saveEventToDB(updatedEvent);
-    setEvents(prevEvents => {
-      const updatedEvents = prevEvents.map(ev => ev.id === updatedEvent.id ? updatedEvent : ev);
-      localStorage.setItem('events', JSON.stringify(updatedEvents));
-      return updatedEvents;
-    });
+    
+    const saveResult = await saveEventToDB(updatedEvent);
+    
+    if (saveResult) {
+      setEvents(prevEvents => {
+        const updatedEvents = prevEvents.map(ev => ev.id === updatedEvent.id ? updatedEvent : ev);
+        return updatedEvents;
+      });
+      toast.success('האירוע עודכן בהצלחה');
+    } else {
+      toast.error('שגיאה בעדכון האירוע');
+      resizeInfo.revert(); // Revert the resize if save failed
+    }
   }, [events]);
 
   // Handle delete event
@@ -1043,25 +1100,19 @@ extendedProps: {
       
       // Update local state
       setEvents(prevEvents => {
-        const updatedEvents = prevEvents.filter(ev => ev.id !== eventId);
-        localStorage.setItem('events', JSON.stringify(updatedEvents));
-        return updatedEvents;
+        return prevEvents.filter(ev => ev.id !== eventId);
       });
+      
+      // Show success message
+      toast.success('האירוע נמחק בהצלחה');
       
       // Close modal
       setIsModalOpen(false);
     } catch (error) {
       console.error("Error deleting event:", error);
       
-      // Still update local state even if API fails
-      setEvents(prevEvents => {
-        const updatedEvents = prevEvents.filter(ev => ev.id !== eventId);
-        localStorage.setItem('events', JSON.stringify(updatedEvents));
-        return updatedEvents;
-      });
-      
-      // Close modal
-      setIsModalOpen(false);
+      // Show error message
+      toast.error('שגיאה במחיקת האירוע');
     }
   }, []);
 
@@ -1107,7 +1158,7 @@ extendedProps: {
   };
   
   // Handle converting event type (all day <-> regular)
-  const handleConvertEventType = (event) => {
+  const handleConvertEventType = async (event) => {
     // Create a copy of the event
     const eventCopy = { ...event.toPlainObject(), start: event.startStr, end: event.endStr };
     
@@ -1148,7 +1199,7 @@ extendedProps: {
     }
     
     // Save the converted event
-    handleUpdateEvent(eventCopy);
+    await handleUpdateEvent(eventCopy);
   };
 
   // Handle adding a new course
@@ -1161,52 +1212,92 @@ extendedProps: {
       
       // Save to API
       const response = await axios.post(`${API_BASE_URL}/courses`, {
+        id: newCourse.id,
         name: newCourse.name,
-        color: JSON.stringify(newCourse.color),
+        color: typeof newCourse.color === 'string' ? newCourse.color : JSON.stringify(newCourse.color),
         tags: JSON.stringify(newCourse.tags)
       });
       
       // Update with API response
       const savedCourse = response.data;
-      setCourses(prevCourses => {
-        const updatedCourses = [...prevCourses, savedCourse];
-        localStorage.setItem('courses', JSON.stringify(updatedCourses));
-        return updatedCourses;
-      });
+      setCourses(prevCourses => [...prevCourses, savedCourse]);
+      
+      // Show success message
+      toast.success('הקורס נוסף בהצלחה');
+      
+      return savedCourse;
     } catch (error) {
       console.error("Error adding course:", error);
       
+      // Show error message
+      toast.error('שגיאה בהוספת הקורס');
+      
       // Still update local state even if API fails
-      setCourses(prevCourses => {
-        const updatedCourses = [...prevCourses, newCourse];
-        localStorage.setItem('courses', JSON.stringify(updatedCourses));
-        return updatedCourses;
-      });
+      setCourses(prevCourses => [...prevCourses, newCourse]);
+      
+      return newCourse;
     }
   }, []);
 
   // Handle settings changes
-  const handleSettingsChange = useCallback((changes) => {
+  const handleSettingsChange = useCallback(async (changes) => {
     if (changes.type === 'workHours') {
-      setCalendarSettings({ 
-        slotMinTime: changes.startTime, 
-        slotMaxTime: changes.endTime 
-      });
+      try {
+        // Save work hours to database
+        await axios.post(`${API_BASE_URL}/settings/workhours`, {
+          startTime: changes.startTime, 
+          endTime: changes.endTime
+        });
+        
+        // Update local state
+        setCalendarSettings({ 
+          slotMinTime: changes.startTime, 
+          slotMaxTime: changes.endTime 
+        });
+        
+        toast.success('שעות העבודה נשמרו בהצלחה');
+      } catch (error) {
+        console.error("Error saving work hours:", error);
+        toast.error('שגיאה בשמירת שעות העבודה');
+      }
     } else if (changes.type === 'trainers') {
+      // Trainers are saved in the database via separate API calls
       setTrainers(changes.trainers);
-      localStorage.setItem('trainers', JSON.stringify(changes.trainers));
     } else if (changes.type === 'courses') {
+      // Courses are saved in the database via separate API calls
       setCourses(changes.courses);
-      localStorage.setItem('courses', JSON.stringify(changes.courses));
     } else if (changes.type === 'colorPalette') {
-      // No need to update state here, we'll use localStorage directly
-      localStorage.setItem('colorPalette', JSON.stringify(changes.colorPalette));
+      try {
+        // Save color palette to database
+        await axios.post(`${API_BASE_URL}/settings`, {
+          key: 'colorPalette',
+          value: changes.colorPalette
+        });
+        
+        toast.success('פלטת הצבעים נשמרה בהצלחה');
+      } catch (error) {
+        console.error("Error saving color palette:", error);
+        toast.error('שגיאה בשמירת פלטת הצבעים');
+      }
     } else if (changes.type === 'courseTags') {
-      localStorage.setItem('courseTags', JSON.stringify(changes.tags));
+      try {
+        // Save course tags to database
+        await axios.post(`${API_BASE_URL}/settings`, {
+          key: 'courseTags',
+          value: changes.tags
+        });
+        
+        toast.success('תגיות הקורסים נשמרו בהצלחה');
+      } catch (error) {
+        console.error("Error saving course tags:", error);
+        toast.error('שגיאה בשמירת תגיות הקורסים');
+      }
+    } else if (changes.type === 'eventTypes') {
+      // Event types are managed via separate API endpoints, not here
     }
   }, []);
 
-  // Simplified and robust exportToICS function that properly handles Hebrew text
+  // Simple export to ICS without localStorage dependency
   const exportToICS = (events, courses, trainers) => {
     if (!events || events.length === 0) {
       alert("אין אירועים לייצוא");
@@ -1338,16 +1429,8 @@ extendedProps: {
       
     // Get event type from extendedProps
     const eventTypeId = event.extendedProps?.eventTypeId;
-    let eventType = null;
-    
-    // Load event types from localStorage
-    try {
-      const savedEventTypes = localStorage.getItem('eventTypes');
-      const eventTypes = savedEventTypes ? JSON.parse(savedEventTypes) : [];
-      eventType = eventTypeId ? eventTypes.find(type => type.id === eventTypeId) : null;
-    } catch (e) {
-      console.error("Error parsing eventTypes from localStorage:", e);
-    }
+    const eventType = eventTypeId ? 
+      eventTypes.find(type => type.id === eventTypeId) : null;
     
     const fullTitle = event.title;
     const displayTitle = fullTitle.length > 15 ? fullTitle.substring(0,15) + '...' : fullTitle;
@@ -1393,24 +1476,48 @@ extendedProps: {
   };
 
   // Handle import events from export/import feature
-  const handleImportEvents = (importedEvents) => {
+  const handleImportEvents = async (importedEvents) => {
     // Process imported events and add them to the existing events
     const existingEventIds = new Set(events.map(e => e.id));
     const newEvents = importedEvents.filter(e => !existingEventIds.has(e.id));
     
+    let successCount = 0;
+    let failedCount = 0;
+    
     // Save each new event
-    newEvents.forEach(event => {
-      saveEventToDB(event);
-    });
+    for (const event of newEvents) {
+      try {
+        const saveResult = await saveEventToDB(event);
+        if (saveResult) {
+          successCount++;
+        } else {
+          failedCount++;
+        }
+      } catch (error) {
+        console.error("Error importing event:", error);
+        failedCount++;
+      }
+    }
     
-    // Update the state
-    setEvents(prevEvents => {
-      const updatedEvents = [...prevEvents, ...newEvents];
-      localStorage.setItem('events', JSON.stringify(updatedEvents));
-      return updatedEvents;
-    });
+    // Refresh events from database
+    const fetchEvents = async () => {
+      try {
+        const response = await axios.get(`${API_BASE_URL}/events`);
+        setEvents(response.data.map(processRecurringEvent));
+      } catch (error) {
+        console.error("Error fetching events after import:", error);
+      }
+    };
     
-    toast.success(`ייבוא הושלם: ${newEvents.length} אירועים חדשים התווספו ללוח השנה`);
+    await fetchEvents();
+    
+    if (successCount > 0) {
+      toast.success(`ייבוא הושלם: ${successCount} אירועים חדשים התווספו ללוח השנה`);
+    }
+    
+    if (failedCount > 0) {
+      toast.error(`${failedCount} אירועים נכשלו בייבוא`);
+    }
   };
 
   // Confirm event deletion
@@ -1430,8 +1537,28 @@ extendedProps: {
     );
   };
 
+  // Show loading indicator while fetching data
+  if (isLoading) {
+    return (
+      <div className="loading-container">
+        <div className="loading-spinner"></div>
+        <div className="loading-text">טוען נתונים...</div>
+      </div>
+    );
+  }
+
   return (
     <div className={`calendar-container modern ${effectiveDarkMode ? 'dark' : ''}`}>
+      {/* Display error message if there was an error loading data */}
+      {error && (
+        <div className="error-message">
+          {error}
+          <button onClick={() => window.location.reload()} className="reload-button">
+            טען מחדש
+          </button>
+        </div>
+      )}
+      
       {/* App Tabs */}
       <div className="app-tabs">
         <div 
@@ -1476,7 +1603,7 @@ extendedProps: {
               >
                 <option value="">כל המאמנים</option>
                 {trainers.map(trainer => (
-                  <option key={trainer.id} value={trainer.id}>
+<option key={trainer.id} value={trainer.id}>
                     {trainer.name}
                   </option>
                 ))}
@@ -1544,6 +1671,7 @@ extendedProps: {
           event={selectedEvent}
           courses={courses}
           trainers={trainers}
+          eventTypes={eventTypes}
           onUpdate={handleUpdateEvent}
           onDelete={handleDeleteEvent}
           onAddCourse={handleAddCourse}
@@ -1559,6 +1687,7 @@ extendedProps: {
           onClose={() => setIsSettingsOpen(false)}
           trainers={trainers}
           courses={courses}
+          eventTypes={eventTypes}
           onSettingsChange={handleSettingsChange}
           events={events}
           onImportEvents={handleImportEvents}

@@ -1,0 +1,37 @@
+// src/components/SlidePanel.js
+import React, { useState } from 'react';
+import TextEditor from './TextEditor';
+import '../styles/SlidePanel.css';
+
+const SlidePanel = ({ isDarkMode }) => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  const togglePanel = () => {
+    setIsOpen(!isOpen);
+  };
+
+  return (
+    <>
+      {/* Toggle button */}
+      <button 
+        className={`editor-toggle-btn ${isOpen ? 'open' : ''}`} 
+        onClick={togglePanel}
+        aria-label="Toggle Editor Panel"
+      >
+        {isOpen ? '×' : '✎'}
+      </button>
+
+      {/* Editor panel */}
+      <div className={`editor-panel ${isOpen ? 'open' : ''}`}>
+        <div className="editor-header">
+          <h3>עורך טקסט</h3>
+        </div>
+        <div className="editor-container">
+          <TextEditor isDarkMode={isDarkMode} />
+        </div>
+      </div>
+    </>
+  );
+};
+
+export default SlidePanel;
