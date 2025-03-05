@@ -1,0 +1,139 @@
+import React, { useState, useEffect } from 'react';
+import CalendarComponent from './components/CalendarComponent';
+import { ThemeProvider, useTheme } from './utils/ThemeManager';
+import './styles/Calendar.css';
+import './styles/ThemeStyles.css';
+import './highlight-register'; // Import this to ensure hljs is registered
+
+// Updated imports for react-pro-sidebar
+import { Sidebar, ProSidebarProvider } from 'react-pro-sidebar';
+import TextEditor from './TextEditor'; // Ensure the path is correct
+
+const SidebarToggleButton = ({ onClick, isSidebarOpen }) => {
+  const [isHovered, setIsHovered] = useState(false);
+
+  const buttonStyle = {
+    position: 'fixed',
+    bottom: '24px',
+    left: '24px',
+    zIndex: 50,
+    
+    width: '48px',
+    height: '48px',
+  
+    // backgroundColor: 'var(--bg-light)',
+    color: 'white',
+    
+    border: 'none',
+    borderRadius: '50%',
+    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+    
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    
+    fontSize: '24px',
+    cursor: 'pointer',
+    
+    transform: isHovered ? 'scale(1.1) rotate(360deg)' : 'scale(1) rotate(0deg)',
+    transition: 'all 0.4s ease-in-out',
+    
+    opacity: isHovered ? 0.9 : 1,
+  };
+
+  return (
+    <button 
+      style={buttonStyle}
+      className="settings-button"
+      onClick={onClick}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      aria-label={isSidebarOpen ? "Close Sidebar" : "Open Sidebar"}
+    >
+      {isSidebarOpen ? '✕' : '✎'}
+    </button>
+  );
+};
+
+function AppContent() {
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  // Get theme using the useTheme hook
+  const { isDarkMode } = useTheme();
+
+  // Add loading effect
+  useEffect(() => {
+    // Simulate loading for a smoother experience
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 600);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Toggle sidebar open/close
+  const toggleSidebar = () => {
+    setIsSidebarOpen(prev => !prev);
+  };
+
+  return (
+    <>
+      {isLoading ? (
+        <div className="loading-screen">
+          <div className="loading-spinner"></div>
+          <div className="loading-text">Loading your calendar</div>
+        </div>
+      ) : (
+        <div className="main-container">
+          {/* Button to toggle the sidebar */}
+      <SidebarToggleButton 
+        onClick={toggleSidebar} 
+        isSidebarOpen={isSidebarOpen} 
+      />
+          {/* Layout container */}
+          <div className="content-wrapper" style={{ display: 'flex' }}>
+            <ProSidebarProvider>
+              <Sidebar
+                collapsed={!isSidebarOpen}
+                style={{
+                  display: isSidebarOpen ? 'block' : 'none', // Hide when collapsed
+                  transition: 'display 0.3s ease',
+                  width: '550px',
+                }}
+              >
+                <div style={{ padding: '10px', fontWeight: 'bold' }}>
+                  Text Editor
+                </div>
+                <div>
+                  <TextEditor />
+                </div>
+              </Sidebar>
+            </ProSidebarProvider>
+            <div
+              className="calendar-container"
+              style={{
+                flex: 1,
+                transition: 'padding-left 0.3s',
+                paddingLeft: isSidebarOpen ? '20px' : '0',
+              }}
+            >
+              <CalendarComponent />
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+// Wrapper component that provides the ThemeProvider
+function App() {
+  return (
+    <ThemeProvider>
+      <AppContent />
+    </ThemeProvider>
+  );
+}
+
+export default App;
